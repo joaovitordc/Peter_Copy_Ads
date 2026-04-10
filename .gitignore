@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.firecrawl/
+planilhas_geradas_shopee/
+planilhas_geradas_erp/
+web/jobs/
+
+.vercel

@@ -1,0 +1,16 @@
+# Dependencias do projeto Agent_NewProductShopee
+
+# Leitura/escrita de planilhas
+openpyxl
+xlrd
+
+# HTTP e uploads
+requests
+
+# Variaveis de ambiente
+python-dotenv
+
+# Servidor web (frontend)
+fastapi
+uvicorn[standard]
+python-multipart

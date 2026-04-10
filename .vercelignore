@@ -1,0 +1,29 @@
+# Arquivos gerados (outputs)
+planilhas_geradas_shopee/
+planilhas_geradas_erp/
+
+# Arquivos de entrada (nao fazem parte do app)
+planilhas_links_artes/
+
+# Cache do Firecrawl
+.firecrawl/
+
+# Jobs temporarios
+web/jobs/
+
+# Documentacao interna
+.claude/
+
+# Templates de referencia (scripts constroem do zero, nao usam estes arquivos)
+planilhas_padrao/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets
+.env
+
+# IDE
+.vscode/

@@ -1,0 +1,70 @@
+{
+  "shopee_category_id": 101156,
+  "default_stock": 1000,
+  "default_weight_kg": 1.0,
+  "default_comprimento_cm": 45,
+  "default_largura_cm": 65,
+  "default_altura_cm": 5,
+  "classificacao_fiscal": "4911.91.00",
+  "origem_produto": "0 - Nacional, exceto as indicadas nos códigos 3 a 5",
+  "categoria_erp": "Quadros Decorativos",
+  "imagens_fixas": {
+    "img4": "https://i.postimg.cc/9FqFR363/1-MELI.jpg",
+    "img5": "https://i.postimg.cc/8Cw1QT6v/2-MELI.jpg",
+    "img6": "https://i.postimg.cc/cLRxhR1X/3-MELI.jpg",
+    "img7": "https://i.postimg.cc/LsmHbJnR/4-MELI.jpg",
+    "img8": "https://i.postimg.cc/wj8xDfz1/5-MELI.jpg"
+  },
+  "precos": {
+    "Q1": {
+      "2030": {"SM": 19.90, "CM": 59.90},
+      "3040": {"SM": 29.90, "CM": 79.90},
+      "4060": {"SM": 49.90, "CM": 109.90},
+      "5070": {"SM": 69.90, "CM": 149.90},
+      "6090": {"SM": 89.90, "CM": 199.90}
+    },
+    "KIT2": {
+      "3040": {"SM": 49.90, "CM": 129.90},
+      "4060": {"SM": 79.90, "CM": 169.90}
+    },
+    "KIT3": {
+      "2030": {"SM": 59.90, "CM": 119.90},
+      "3040": {"SM": 69.90, "CM": 189.90},
+      "4060": {"SM": 109.90, "CM": 249.90},
+      "5070": {"SM": 179.90, "CM": 369.90},
+      "6090": {"SM": 249.90, "CM": 499.90}
+    },
+    "KIT5": {
+      "3040": {"SM": 109.90, "CM": 299.90},
+      "4060": {"SM": 169.90, "CM": 399.90}
+    },
+    "KIT6": {
+      "3040": {"SM": 129.90, "CM": 349.90},
+      "4060": {"SM": 199.90, "CM": 469.90}
+    }
+  },
+  "variacoes": [
+    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Sem Moldura", "mol_sku": "SM", "tipo_mold": "SM"},
+    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Preta", "mol_sku": "MP", "tipo_mold": "CM"},
+    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Branca", "mol_sku": "MB", "tipo_mold": "CM"},
+    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Madeira", "mol_sku": "MM", "tipo_mold": "CM"},
+    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Sem Moldura", "mol_sku": "SM", "tipo_mold": "SM"},
+    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Preta", "mol_sku": "MP", "tipo_mold": "CM"},
+    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Branca", "mol_sku": "MB", "tipo_mold": "CM"},
+    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Madeira", "mol_sku": "MM", "tipo_mold": "CM"}
+  ],
+  "lojas": {
+    "PPJ": {
+      "titulo_padrao": "Quadro Decorativo {seo} Para Sala, Escritório e Quarto - {nome_arte}",
+      "marca_erp": "PPJ"
+    },
+    "iPaper": {
+      "titulo_padrao": "Quadro Decorativo {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
+      "marca_erp": "iPaper"
+    },
+    "AllQuadros": {
+      "titulo_padrao": "Kit {n} Quadros Decorativos {seo} Moderno - {nome_arte}",
+      "marca_erp": "AllQuadros"
+    }
+  }
+}
