@@ -7,7 +7,6 @@ Executa o pipeline completo a partir de um arquivo de entrada.
 import os
 import sys
 import json
-import importlib.util
 import time
 from pathlib import Path
 from typing import Callable
@@ -15,25 +14,17 @@ from typing import Callable
 # Caminho base do projeto
 BASE_DIR = Path(__file__).parent.parent
 
-# Adicionar scripts/ ao path para imports
+# Adicionar scripts/ ao path para que o Python encontre os modulos
 SCRIPTS_DIR = BASE_DIR / "scripts"
-sys.path.insert(0, str(SCRIPTS_DIR))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
-
-def _load_script(name: str):
-    """Carrega um modulo de scripts/ via importlib (nao modifica os scripts)."""
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS_DIR / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-# Importar funcoes dos scripts existentes
-_read_input = _load_script("read_input")
-_fetch_etsy = _load_script("fetch_etsy_images")
-_upload_images = _load_script("upload_images")
-_build_shopee = _load_script("build_shopee_template")
-_build_erp = _load_script("build_erp_template")
+# Imports diretos (Vercel detecta estaticamente e inclui no bundle)
+import read_input as _read_input
+import fetch_etsy_images as _fetch_etsy
+import upload_images as _upload_images
+import build_shopee_template as _build_shopee
+import build_erp_template as _build_erp
 
 # Importar config.json
 CONFIG_PATH = BASE_DIR / "config.json"
