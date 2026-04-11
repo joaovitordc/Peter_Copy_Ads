@@ -1,20 +1,21 @@
-/* ── Estado da aplicação ───────────────────────────────────────────────── */
+/* ── Estado ────────────────────────────────────────────────────────────── */
 const state = {
-  loja: null,
-  arquivo: null,
-  jobId: null,
+  loja:         null,
+  modo:         'links_com_imagens',
+  arquivo:      null,
+  jobId:        null,
   pollingTimer: null,
 };
 
-/* ── Elementos do DOM ──────────────────────────────────────────────────── */
+/* ── Helpers DOM ───────────────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 
-const lojasGrid     = $('lojas-grid');
-const dropzone      = $('dropzone');
-const fileInput     = $('file-input');
-const fileSelected  = $('file-selected');
-const fileName      = $('file-name');
-const btnProcessar  = $('btn-processar');
+const lojasGrid      = $('lojas-grid');
+const dropzone       = $('dropzone');
+const fileInput      = $('file-input');
+const fileSelected   = $('file-selected');
+const fileName       = $('file-name');
+const btnProcessar   = $('btn-processar');
 
 const formSection     = $('form-section');
 const progressSection = $('progress-section');
@@ -26,31 +27,31 @@ const progressPct     = $('progress-pct');
 const progressBarFill = $('progress-bar-fill');
 const progressBar     = progressSection?.querySelector('[role=progressbar]');
 
-const resultSubtitle  = $('result-subtitle');
+const resultSubtitle    = $('result-subtitle');
 const btnDownloadShopee = $('btn-download-shopee');
-const btnDownloadErp  = $('btn-download-erp');
-const avisosBox       = $('avisos-box');
-const avisosLista     = $('avisos-lista');
-const btnNovaPlanilha = $('btn-nova-planilha');
+const btnDownloadErp    = $('btn-download-erp');
+const avisosBox         = $('avisos-box');
+const avisosLista       = $('avisos-lista');
+const btnNovaPlanilha   = $('btn-nova-planilha');
 
-const errorMsg          = $('error-msg');
+const errorMsg           = $('error-msg');
 const btnTentarNovamente = $('btn-tentar-novamente');
 
-/* ── Inicialização ─────────────────────────────────────────────────────── */
+/* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   carregarLojas();
+  configurarModos();
   configurarDropzone();
   configurarBotoes();
 });
 
-/* ── Carregar lojas do servidor ────────────────────────────────────────── */
+/* ── Lojas ──────────────────────────────────────────────────────────────── */
 async function carregarLojas() {
   try {
-    const res = await fetch('/api/lojas');
+    const res  = await fetch('/api/lojas');
     const data = await res.json();
     renderizarLojas(data.lojas || []);
   } catch {
-    // Fallback com lojas fixas caso o servidor falhe
     renderizarLojas([
       { id: 'PPJ',        nome: 'PPJ',        descricao: 'Quadros religiosos e minimalistas' },
       { id: 'iPaper',     nome: 'iPaper',     descricao: 'Arte, Bauhaus e design moderno' },
@@ -74,10 +75,7 @@ function renderizarLojas(lojas) {
     `;
     card.addEventListener('click', () => selecionarLoja(loja.id));
     card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selecionarLoja(loja.id);
-      }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selecionarLoja(loja.id); }
     });
     lojasGrid.appendChild(card);
   });
@@ -86,35 +84,50 @@ function renderizarLojas(lojas) {
 function selecionarLoja(id) {
   state.loja = id;
   lojasGrid.querySelectorAll('.loja-card').forEach(c => {
-    const selecionada = c.dataset.id === id;
-    c.classList.toggle('selecionada', selecionada);
-    c.setAttribute('aria-pressed', String(selecionada));
+    const sel = c.dataset.id === id;
+    c.classList.toggle('selecionada', sel);
+    c.setAttribute('aria-pressed', String(sel));
   });
-  atualizarBotaoProcessar();
+  atualizarBotao();
 }
 
-/* ── Dropzone & upload ─────────────────────────────────────────────────── */
+/* ── Modos ──────────────────────────────────────────────────────────────── */
+function configurarModos() {
+  document.querySelectorAll('input[name="modo"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      state.modo = radio.value;
+      // Atualizar visual dos cards
+      document.querySelectorAll('.modo-card').forEach(card => {
+        const inp = card.querySelector('input[name="modo"]');
+        card.classList.toggle('selecionado', inp && inp.checked);
+      });
+    });
+  });
+}
+
+/* ── Download do modelo ─────────────────────────────────────────────────── */
+function baixarModelo(tipo) {
+  const a = document.createElement('a');
+  a.href = `/api/modelo/${tipo}`;
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+/* ── Dropzone ───────────────────────────────────────────────────────────── */
 function configurarDropzone() {
-  // Clique na dropzone abre seletor
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      fileInput.click();
-    }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
   });
 
-  // Seleção via input
   fileInput.addEventListener('change', () => {
     if (fileInput.files[0]) definirArquivo(fileInput.files[0]);
   });
 
-  // Drag & drop
   ['dragenter', 'dragover'].forEach(evt => {
-    dropzone.addEventListener(evt, e => {
-      e.preventDefault();
-      dropzone.classList.add('drag-over');
-    });
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
   });
 
   ['dragleave', 'dragend'].forEach(evt => {
@@ -124,8 +137,7 @@ function configurarDropzone() {
   dropzone.addEventListener('drop', e => {
     e.preventDefault();
     dropzone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) definirArquivo(file);
+    if (e.dataTransfer.files[0]) definirArquivo(e.dataTransfer.files[0]);
   });
 }
 
@@ -138,10 +150,10 @@ function definirArquivo(file) {
   state.arquivo = file;
   fileName.textContent = file.name;
   fileSelected.style.display = 'flex';
-  atualizarBotaoProcessar();
+  atualizarBotao();
 }
 
-/* ── Botão processar ───────────────────────────────────────────────────── */
+/* ── Botões ─────────────────────────────────────────────────────────────── */
 function configurarBotoes() {
   btnProcessar.addEventListener('click', iniciarProcessamento);
   btnNovaPlanilha?.addEventListener('click', resetar);
@@ -150,7 +162,7 @@ function configurarBotoes() {
   btnDownloadErp?.addEventListener('click', () => baixarArquivo('erp'));
 }
 
-function atualizarBotaoProcessar() {
+function atualizarBotao() {
   btnProcessar.disabled = !(state.loja && state.arquivo);
 }
 
@@ -161,12 +173,13 @@ async function iniciarProcessamento() {
   const formData = new FormData();
   formData.append('arquivo', state.arquivo);
   formData.append('loja', state.loja);
+  formData.append('modo', state.modo);
 
   mostrarSecao('progress');
   atualizarProgresso('Enviando arquivo...', 2);
 
   try {
-    const res = await fetch('/api/processar', { method: 'POST', body: formData });
+    const res  = await fetch('/api/processar', { method: 'POST', body: formData });
     const data = await res.json();
 
     if (!res.ok) {
@@ -176,7 +189,7 @@ async function iniciarProcessamento() {
 
     state.jobId = data.job_id;
     iniciarPolling();
-  } catch (e) {
+  } catch {
     mostrarErro('Não foi possível conectar ao servidor. Verifique se ele está rodando.');
   }
 }
@@ -186,62 +199,44 @@ function iniciarPolling() {
 }
 
 function pararPolling() {
-  if (state.pollingTimer) {
-    clearInterval(state.pollingTimer);
-    state.pollingTimer = null;
-  }
+  if (state.pollingTimer) { clearInterval(state.pollingTimer); state.pollingTimer = null; }
 }
 
 async function consultarStatus() {
   if (!state.jobId) return;
-
   try {
-    const res = await fetch(`/api/status/${state.jobId}`);
-    if (!res.ok) {
-      pararPolling();
-      mostrarErro('Job não encontrado. Tente novamente.');
-      return;
-    }
+    const res  = await fetch(`/api/status/${state.jobId}`);
+    if (!res.ok) { pararPolling(); mostrarErro('Job não encontrado. Tente novamente.'); return; }
 
     const data = await res.json();
     atualizarProgresso(data.mensagem || '', data.percent || 0);
 
-    if (data.status === 'concluido') {
-      pararPolling();
-      mostrarResultado(data);
-    } else if (data.status === 'erro') {
-      pararPolling();
-      mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.');
-    }
-  } catch {
-    // Erro de rede: tentar novamente na proxima iteração
-  }
+    if (data.status === 'concluido') { pararPolling(); mostrarResultado(data); }
+    else if (data.status === 'erro') { pararPolling(); mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.'); }
+  } catch { /* retry na próxima iteração */ }
 }
 
-/* ── UI helpers ────────────────────────────────────────────────────────── */
+/* ── UI ─────────────────────────────────────────────────────────────────── */
 function mostrarSecao(secao) {
-  formSection.style.display     = secao === 'form'     ? ''       : 'none';
-  progressSection.style.display = secao === 'progress' ? ''       : 'none';
-  resultSection.style.display   = secao === 'result'   ? ''       : 'none';
-  errorSection.style.display    = secao === 'error'    ? ''       : 'none';
-  btnProcessar.style.display    = secao === 'form'     ? ''       : 'none';
+  formSection.style.display     = secao === 'form'     ? '' : 'none';
+  progressSection.style.display = secao === 'progress' ? '' : 'none';
+  resultSection.style.display   = secao === 'result'   ? '' : 'none';
+  errorSection.style.display    = secao === 'error'    ? '' : 'none';
+  btnProcessar.style.display    = secao === 'form'     ? '' : 'none';
 }
 
 function atualizarProgresso(mensagem, pct) {
-  progressLabel.textContent = mensagem;
-  progressPct.textContent   = `${pct}%`;
-  progressBarFill.style.width = `${pct}%`;
-  if (progressBar) {
-    progressBar.setAttribute('aria-valuenow', String(pct));
-  }
+  progressLabel.textContent     = mensagem;
+  progressPct.textContent       = `${pct}%`;
+  progressBarFill.style.width   = `${pct}%`;
+  if (progressBar) progressBar.setAttribute('aria-valuenow', String(pct));
 }
 
 function mostrarResultado(data) {
   const n = data.produtos || 0;
   resultSubtitle.textContent = `${n} produto${n !== 1 ? 's' : ''} processado${n !== 1 ? 's' : ''} com sucesso.`;
 
-  // Avisos
-  if (data.avisos && data.avisos.length > 0) {
+  if (data.avisos?.length) {
     avisosLista.innerHTML = '';
     data.avisos.forEach(av => {
       const li = document.createElement('li');
@@ -275,23 +270,29 @@ function resetar() {
   pararPolling();
   state.loja   = null;
   state.arquivo = null;
-  state.jobId  = null;
+  state.jobId   = null;
 
-  // Resetar seletores de loja
   lojasGrid.querySelectorAll('.loja-card').forEach(c => {
     c.classList.remove('selecionada');
     c.setAttribute('aria-pressed', 'false');
   });
 
-  // Resetar upload
-  fileInput.value = '';
+  // Resetar modo para padrão
+  const radioDefault = document.querySelector('input[name="modo"][value="links_com_imagens"]');
+  if (radioDefault) {
+    radioDefault.checked = true;
+    state.modo = 'links_com_imagens';
+    document.querySelectorAll('.modo-card').forEach(card => {
+      const inp = card.querySelector('input[name="modo"]');
+      card.classList.toggle('selecionado', inp?.value === 'links_com_imagens');
+    });
+  }
+
+  fileInput.value           = '';
   fileSelected.style.display = 'none';
-  fileName.textContent = '';
-  atualizarBotaoProcessar();
-
-  // Resetar progresso
+  fileName.textContent       = '';
+  atualizarBotao();
   atualizarProgresso('Aguardando início...', 0);
-
   mostrarSecao('form');
   btnProcessar.style.display = '';
 }

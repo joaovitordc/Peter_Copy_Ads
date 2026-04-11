@@ -21,28 +21,98 @@
       <p class="header-subtitle">Converta anúncios da Etsy em planilhas para Shopee e ERP automaticamente</p>
     </header>
 
-    <!-- ── Formulário principal ── -->
+    <!-- ── Formulário ── -->
     <main class="main" id="form-section">
 
-      <!-- Seletor de loja -->
+      <!-- Passo 1: Loja -->
       <section class="card">
         <h2 class="section-title">
           <span class="step-badge">1</span>
           Selecione a loja
         </h2>
         <div class="lojas-grid" id="lojas-grid">
-          <!-- Preenchido via JS -->
           <div class="loja-skeleton"></div>
           <div class="loja-skeleton"></div>
           <div class="loja-skeleton"></div>
         </div>
       </section>
 
-      <!-- Upload -->
+      <!-- Passo 2: Modo da planilha -->
       <section class="card">
         <h2 class="section-title">
           <span class="step-badge">2</span>
-          Envie a planilha com links Etsy
+          Tipo de planilha
+        </h2>
+
+        <div class="modos-grid">
+          <!-- Modo: links + imagens (padrão, disponível agora) -->
+          <label class="modo-card selecionado" id="modo-links-imagens">
+            <input type="radio" name="modo" value="links_com_imagens" checked hidden />
+            <div class="modo-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <rect x="2" y="3" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+                <rect x="12" y="3" width="8" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+                <rect x="12" y="10" width="8" height="3" rx="1" stroke="currentColor" stroke-width="1.7"/>
+                <rect x="12" y="15" width="8" height="3" rx="1" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </div>
+            <div class="modo-info">
+              <span class="modo-nome">Links + Imagens <span class="badge-disponivel">Disponível agora</span></span>
+              <span class="modo-desc">Planilha com a URL do anúncio Etsy e os links das imagens já selecionadas</span>
+            </div>
+            <div class="modo-check" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" fill="#4F46E5"/>
+                <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </label>
+
+          <!-- Modo: só links (requer API Etsy aprovada) -->
+          <label class="modo-card" id="modo-links">
+            <input type="radio" name="modo" value="links" hidden />
+            <div class="modo-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M13 4H5a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9l-6-5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                <path d="M13 4v5h5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                <path d="M7 12h8M7 15h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="modo-info">
+              <span class="modo-nome">Só Links <span class="badge-pendente">Requer API Etsy</span></span>
+              <span class="modo-desc">Apenas as URLs dos anúncios — imagens buscadas automaticamente via API</span>
+            </div>
+            <div class="modo-check" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" fill="#4F46E5"/>
+                <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </label>
+        </div>
+
+        <!-- Download do modelo -->
+        <div class="modelo-row">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M7.5 10V3M4.5 7.5l3 3 3-3" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12h11" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Baixar modelo de planilha:</span>
+          <button class="link-btn" id="btn-modelo-links-imagens" onclick="baixarModelo('links_com_imagens')">
+            Links + Imagens
+          </button>
+          <span class="sep">·</span>
+          <button class="link-btn" id="btn-modelo-links" onclick="baixarModelo('links')">
+            Só Links
+          </button>
+        </div>
+      </section>
+
+      <!-- Passo 3: Upload -->
+      <section class="card">
+        <h2 class="section-title">
+          <span class="step-badge">3</span>
+          Envie sua planilha
         </h2>
 
         <div class="dropzone" id="dropzone" role="button" tabindex="0"
@@ -51,7 +121,9 @@
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
               <path d="M20 26V14M14 20l6-6 6 6" stroke="#6366F1" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M10 30h20M6 22c0 4.4 3.6 8 8 8h12c4.4 0 8-3.6 8-8 0-3.8-2.7-7-6.3-7.8C27 10.5 23.8 8 20 8c-3.8 0-7 2.5-7.7 6.2C8.7 15 6 18.2 6 22z"
+              <path d="M10 30h20M6 22c0 4.4 3.6 8 8 8h12c4.4 0 8-3.6 8-8
+                       0-3.8-2.7-7-6.3-7.8C27 10.5 23.8 8 20 8c-3.8 0-7 2.5-7.7 6.2
+                       C8.7 15 6 18.2 6 22z"
                     stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
@@ -63,8 +135,7 @@
             </svg>
             <span id="file-name"></span>
           </div>
-          <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
-                 aria-label="Selecionar arquivo" style="display:none" />
+          <input type="file" id="file-input" accept=".xlsx,.xls,.csv" aria-label="Selecionar arquivo" style="display:none" />
         </div>
       </section>
 
@@ -109,7 +180,7 @@
 
       <div class="downloads-grid">
         <button class="download-card" id="btn-download-shopee">
-          <div class="download-icon shopee-color" aria-hidden="true">
+          <div class="download-icon" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
               <rect width="28" height="28" rx="6" fill="#EE4D2D" opacity="0.1"/>
               <path d="M14 6v12M8 13l6 6 6-6" stroke="#EE4D2D" stroke-width="2.5"
@@ -128,7 +199,7 @@
         </button>
 
         <button class="download-card" id="btn-download-erp">
-          <div class="download-icon erp-color" aria-hidden="true">
+          <div class="download-icon" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
               <rect width="28" height="28" rx="6" fill="#0EA5E9" opacity="0.1"/>
               <path d="M14 6v12M8 13l6 6 6-6" stroke="#0EA5E9" stroke-width="2.5"
@@ -147,7 +218,7 @@
         </button>
       </div>
 
-      <!-- Avisos (se houver) -->
+      <!-- Avisos -->
       <div class="avisos-box" id="avisos-box" style="display:none">
         <p class="avisos-titulo">Avisos durante o processamento:</p>
         <ul class="avisos-lista" id="avisos-lista"></ul>
@@ -163,8 +234,7 @@
       <div class="error-header">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="11" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
-          <path d="M12 7v5M12 16v.5" stroke="#EF4444" stroke-width="2.5"
-                stroke-linecap="round"/>
+          <path d="M12 7v5M12 16v.5" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <span class="error-title">Ocorreu um erro</span>
       </div>
