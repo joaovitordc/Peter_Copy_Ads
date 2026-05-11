@@ -8,3 +8,13 @@ planilhas_geradas_erp/
 web/jobs/
 
 .vercel
+
+# Planilhas de entrada (dados reais do operador)
+planilhas_links_artes/
+
+# Backups locais do controle de SKUs
+skus_em_uso.json.*
+
+# Claude Code (locais por máquina)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
