@@ -1,5 +1,14 @@
 """
-build_shopee_template.py — Gera planilha Shopee com 8 variacoes por produto.
+build_shopee_template.py — Gera planilha Shopee no formato oficial pra upload em massa.
+
+A partir do Fix v7 (28/04/2026), gera diretamente no formato oficial Shopee
+(Shopee_mass_upload_..._basic_template.xlsx) — operador sobe direto na plataforma
+sem necessidade de copiar/colar pra template oficial.
+
+Estrutura preservada do template oficial:
+- Aba "Modelo" com 6 linhas de metadata (mantidas intactas)
+- Dados de produtos a partir da linha 7
+- Abas auxiliares (Orientação, HiddenTax, etc.) preservadas — validam upload
 
 Uso:
     python scripts/build_shopee_template.py <input.json> [--loja PPJ]
@@ -12,10 +21,10 @@ Formato do JSON de entrada:
   "loja": "PPJ",
   "produtos": [
     {
-      "nome_arte_sku": "DeusEBomOTempoTodo",
+      "nome_arte_sku": "DeusEBom",
       "nome_arte_display": "Deus e Bom o Tempo Todo",
       "tipo": "Q1",
-      "titulo_shopee": "Quadro Decorativo Religioso Para Sala, Escritório e Quarto - Deus e Bom o Tempo Todo",
+      "titulo_shopee": "Quadro Decorativo Religioso Minimalista Para Sala, Escritório e Quarto - Deus e Bom o Tempo Todo",
       "imagem_capa": "https://i.ibb.co/xxx/capa.jpg",
       "imagem_1": "https://i.ibb.co/xxx/img1.jpg",
       "imagem_2": "https://i.ibb.co/xxx/img2.jpg",
@@ -24,15 +33,18 @@ Formato do JSON de entrada:
   ]
 }
 """
-import sys, json, os, argparse
+import sys, json, os, argparse, shutil
 from datetime import date
 import openpyxl
-from openpyxl.utils import get_column_letter
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Carrega config.json
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 with open(CONFIG_PATH, encoding="utf-8") as f:
     CONFIG = json.load(f)
+
+TEMPLATE_PATH = os.path.join(BASE_DIR, "planilhas_padrao", "Shopee_mass_upload_2026-04-10_basic_template.xlsx")
 
 DESCRICAO_PADRAO = """Transforme o seu ambiente com Quadros de Decoração de interiores (Sala, Quarto e Escritórios).
 
@@ -64,73 +76,20 @@ Nossa prioridade e garantir a sua satisfação. ♥
 Informações Adicionais:
 Caso queira produzir algum quadro personalizado ou tinha alguma dúvida sobre o produto, não hesite em chamar nossa equipe no Chat."""
 
-# Row 1: internal field names (Shopee template structure)
-ROW1_HEADERS = [
-    "ps_category|0|0", "ps_product_name|1|0", "ps_product_description|1|0",
-    "ps_sku_parent_short|0|0", "et_title_variation_integration_no|0|0",
-    "et_title_variation_1|0|0", "et_title_option_for_variation_1|0|0",
-    "et_title_image_per_variation|0|3", "et_title_variation_2|0|0",
-    "et_title_option_for_variation_2|0|0", "ps_price|1|1", "ps_stock|0|1",
-    "ps_sku_short|0|0", "ps_new_size_chart|0|1", "et_title_size_chart|0|3",
-    "ps_gtin_code|0|0", "sl_tool_mass_upload_compatibility_title|0|0",
-    "ps_item_cover_image|0|3", "ps_item_image_1|0|3", "ps_item_image_2|0|3",
-    "ps_item_image_3|0|3", "ps_item_image_4|0|3", "ps_item_image_5|0|3",
-    "ps_item_image_6|0|3", "ps_item_image_7|0|3", "ps_item_image_8|0|3",
-    "ps_weight|1|1", "ps_length|0|1", "ps_width|0|1", "ps_height|0|1",
-    "channel_id.90022|0|0", "channel_id.90024|0|0", "channel_id.91003|0|0",
-    "ps_product_pre_order_dts|0|1", "ps_invoice_ncm|0|0",
-    "ps_invoice_cfop_same|0|0", "ps_invoice_cfop_diff|0|0",
-    "ps_invoice_origin|0|0", "ps_invoice_csosn|0|0", "ps_invoice_cest|0|0",
-    "ps_invoice_measure_unit|0|0", "ps_pis_cofins_cst_default|0|0",
-    "ps_federal_state_taxes_default|0|0", "ps_operation_type_default|0|0",
-    "ps_ex_tipi_default|0|0", "ps_fci_num_default|0|0",
-    "ps_recopi_num_default|0|0", "ps_additional_info_default|0|0",
-    "sl_label_product_is_grouped_item|0|0", "sl_label_grouped_item_gtin_sscc|0|0",
-    "sl_label_grouped_item_qty|0|0", "sl_label_grouped_item_measure_unity|0|0",
-    "et_title_reason|0|0",
-]
 
-ROW2_META = ["basic", "dc115f855aa8e718d858320a594d9639", "0", "1416244638"]
+SKUS_PATH = os.path.join(BASE_DIR, "skus_em_uso.json")
 
-ROW3_HEADERS = [
-    "Categoria", "Nome do Produto", "Descrição do Produto", "SKU principal",
-    "Número de Integração de Variação", "Nome da Variação 1",
-    "Opção para Variação 1", "Imagem por Variação", "Nome da Variação 2",
-    "Opção para Variação 2", "Preço", "Estoque", "SKU da Variação",
-    "Template da Tabela de Medidas", "Imagem de Tamanhos", "GTIN (EAN)",
-    "IDs de compatibilidade", "Imagem de capa", "Imagem do produto 1",
-    "Imagem do produto 2", "Imagem do produto 3", "Imagem do produto 4",
-    "Imagem do produto 5", "Imagem do produto 6", "Imagem do produto 7",
-    "Imagem do produto 8", "Peso", "Comprimento", "Largura", "Altura",
-    "Entrega Direta", "Retirada pelo Comprador", "Shopee Xpress",
-    "Prazo de Postagem para Encomenda", "NCM", "CFOP (Mesmo Estado)",
-    "CFOP (Outro Estado)", "Origem", "CSOSN", "CEST", "Unidade de Medida",
-    "CST PIS/Cofins", "% total de tributos federais, estaduais e municipais",
-    "Tipo de Operação", "EX TIPI (tabela de exceções IPI)",
-    "Nr. de controle da FCI", "Nr. RECOPI",
-    "Informações adicionais do produto", "Produto é um item agrupável",
-    "GTIN da Unidade Tributável", "Quantidade da Unidade Tributável",
-    "Unidade de medida do item agrupável", "Motivo da Falha",
-]
 
-ROW4_REQUIRED = [
-    "Opcional", "Obrigatório", "Obrigatório", "Opcional",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Obrigatório", "Condicional obrigatório", "Opcional",
-    "Condicional obrigatório", "Condicional obrigatório", "Opcional", "Opcional",
-    "Opcional", "Opcional", "Opcional", "Opcional", "Opcional", "Opcional",
-    "Opcional", "Opcional", "Opcional",
-    "Obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Opcional",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório",
-    "Condicional obrigatório", "Condicional obrigatório", "Condicional obrigatório", "",
-]
+def carregar_skus() -> dict:
+    if os.path.exists(SKUS_PATH):
+        with open(SKUS_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def salvar_skus(skus: dict):
+    with open(SKUS_PATH, "w", encoding="utf-8") as f:
+        json.dump(skus, f, indent=2, ensure_ascii=False)
 
 
 def get_preco(tipo: str, tamanho_sku: str, tipo_moldura: str) -> float:
@@ -145,22 +104,72 @@ def get_preco(tipo: str, tamanho_sku: str, tipo_moldura: str) -> float:
 def gerar_shopee(input_json: dict, output_dir: str) -> str:
     loja = input_json.get("loja", "LOJA")
     produtos = input_json.get("produtos", [])
-    imagens_fixas = CONFIG["imagens_fixas"]
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Modelo"
+    # imagens_fixas agora e por loja: CONFIG["imagens_fixas"][loja] = {"img4":..,"img5":..}
+    imagens_fixas_global = CONFIG["imagens_fixas"]
+    if loja in imagens_fixas_global and isinstance(imagens_fixas_global[loja], dict):
+        imagens_fixas = imagens_fixas_global[loja]
+    else:
+        # Fallback para estrutura antiga (chaves img4-img8 no nivel raiz)
+        # ou loja desconhecida - usa qualquer set como ultima opcao
+        if all(k in imagens_fixas_global for k in ("img4", "img5", "img6", "img7", "img8")):
+            imagens_fixas = imagens_fixas_global
+        else:
+            primeira_loja = next(iter(imagens_fixas_global.values()))
+            imagens_fixas = primeira_loja
+            print(
+                f"[AVISO] Loja '{loja}' sem imagens_fixas configurada. Usando set fallback.",
+                file=sys.stderr,
+            )
 
-    # Escrever linhas de cabecalho (1-4)
-    ws.append(ROW1_HEADERS)
-    row2 = ROW2_META + [""] * (53 - len(ROW2_META))
-    ws.append(row2)
-    ws.append(ROW3_HEADERS)
-    ws.append(ROW4_REQUIRED)
-    ws.append([""] * 53)  # linha 5 (instrucoes - deixar vazia na versao gerada)
-    ws.append([""] * 53)  # linha 6 (validacoes - deixar vazia)
+    # Verificar conflitos de SKU antes de gerar
+    skus_existentes = carregar_skus()
+    conflitos = []
+    for produto in produtos:
+        nome_sku = produto["nome_arte_sku"]
+        if nome_sku in skus_existentes:
+            existente = skus_existentes[nome_sku]
+            if existente["display"] != produto.get("nome_arte_display", ""):
+                conflitos.append(
+                    f"  CONFLITO: SKU '{nome_sku}' ja existe para '{existente['display']}' "
+                    f"(loja {existente['loja']}, {existente['criado_em']}). "
+                    f"Produto atual: '{produto.get('nome_arte_display', '')}'"
+                )
+    if conflitos:
+        # Imprime no terminal pra debug + levanta exception para o pipeline web
+        # capturar e mostrar no UI (em vez de matar o processo com sys.exit).
+        print("[ERRO] Conflitos de SKU encontrados:", file=sys.stderr)
+        for c in conflitos:
+            print(c, file=sys.stderr)
+        # Quando rodando como CLI standalone, ainda saimos com erro
+        if __name__ == "__main__":
+            sys.exit(1)
+        # Quando importado pelo pipeline web, levantamos exception com info util
+        raise ValueError(
+            "Conflito de SKU - este nome ja foi usado para outra arte. Detalhes:\n"
+            + "\n".join(conflitos)
+            + "\nResolucao: edite skus_em_uso.json (apaga a entrada antiga) "
+            "OU mude o nome da arte para algo unico."
+        )
 
-    # Dados comecam na linha 7
+    # Copiar template oficial Shopee como base (6 linhas de metadata, dados na linha 7)
+    hoje = date.today().strftime("%Y-%m-%d")
+    nome_arquivo = f"shopee_{loja.lower()}_{hoje}.xlsx"
+    caminho = os.path.join(output_dir, nome_arquivo)
+    # Se arquivo existir e estiver bloqueado, usar sufixo numerico
+    if os.path.exists(caminho):
+        base = caminho[:-5]
+        sufixo = 2
+        while os.path.exists(f"{base}_{sufixo}.xlsx"):
+            sufixo += 1
+        caminho = f"{base}_{sufixo}.xlsx"
+    shutil.copy2(TEMPLATE_PATH, caminho)
+
+    wb = openpyxl.load_workbook(caminho)
+    ws = wb["Modelo"]
+
+    # Dados comecam na linha 7 (apos 6 linhas de metadata do template oficial Shopee).
+    # ws.append() insere automaticamente apos a ultima linha preenchida.
     num_integracao = 1
     total_linhas = 0
 
@@ -220,11 +229,21 @@ def gerar_shopee(input_json: dict, output_dir: str) -> str:
 
         num_integracao += 1
 
-    # Salvar
-    hoje = date.today().strftime("%Y-%m-%d")
-    nome_arquivo = f"shopee_{loja.lower()}_{hoje}.xlsx"
-    caminho = os.path.join(output_dir, nome_arquivo)
     wb.save(caminho)
+
+    # Registrar novos SKUs no arquivo de controle
+    hoje = date.today().strftime("%Y-%m-%d")
+    for produto in produtos:
+        nome_sku = produto["nome_arte_sku"]
+        if nome_sku not in skus_existentes:
+            skus_existentes[nome_sku] = {
+                "display": produto.get("nome_arte_display", ""),
+                "loja": loja,
+                "tipo": produto.get("tipo", "Q1"),
+                "criado_em": hoje,
+            }
+    salvar_skus(skus_existentes)
+
     print(f"[OK] Shopee: {caminho} ({len(produtos)} produtos, {total_linhas} linhas)", file=sys.stderr)
     return caminho
 

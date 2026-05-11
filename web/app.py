@@ -6,7 +6,7 @@ Rotas:
   GET  /api/lojas                      — Lista lojas disponíveis
   POST /api/processar                  — Inicia job (campo: arquivo, loja, modo)
   GET  /api/status/{job_id}            — Consulta status do job
-  GET  /api/download/{job_id}/{tipo}   — Download do arquivo gerado (shopee|erp)
+  GET  /api/download/{job_id}/{tipo}   — Download do arquivo gerado (shopee|erp|kakashi)
   GET  /api/modelo/{tipo}              — Download do modelo de planilha de entrada
 
 Executar:
@@ -59,6 +59,7 @@ class JobState:
     percent: int = 0
     shopee_path: Optional[str] = None
     erp_path: Optional[str] = None
+    kakashi_path: Optional[str] = None
     produtos: int = 0
     avisos: list = field(default_factory=list)
     erro: Optional[str] = None
@@ -90,7 +91,8 @@ async def get_lojas():
     descricoes = {
         "PPJ":        "Quadros religiosos e minimalistas",
         "iPaper":     "Arte, Bauhaus e design moderno",
-        "AllQuadros": "Kits e conjuntos decorativos",
+        "AllQuadros": "Moderno, minimalista, boho",
+        "DecorKids":  "Quadros para decoração infantil",
     }
     lojas = [
         {"id": nome, "nome": nome, "descricao": descricoes.get(nome, "")}
@@ -157,6 +159,7 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
         job.percent = 100
         job.shopee_path = resultado["shopee_path"]
         job.erp_path = resultado["erp_path"]
+        job.kakashi_path = resultado.get("kakashi_path")
         job.produtos = resultado["produtos"]
         job.avisos = resultado.get("avisos", [])
 
@@ -164,6 +167,7 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
         job.status = "erro"
         job.erro = str(e)
         job.mensagem = str(e)
+        job.avisos = getattr(e, "avisos", []) or []
     except Exception as e:
         job.status = "erro"
         job.erro = f"Erro inesperado: {e}"
@@ -188,8 +192,8 @@ async def status(job_id: str):
 
 @app.get("/api/download/{job_id}/{tipo}")
 async def download(job_id: str, tipo: str):
-    if tipo not in ("shopee", "erp"):
-        raise HTTPException(400, detail="Tipo deve ser 'shopee' ou 'erp'")
+    if tipo not in ("shopee", "erp", "kakashi"):
+        raise HTTPException(400, detail="Tipo deve ser 'shopee', 'erp' ou 'kakashi'")
 
     job = jobs.get(job_id)
     if not job:
@@ -197,7 +201,11 @@ async def download(job_id: str, tipo: str):
     if job.status != "concluido":
         raise HTTPException(400, detail="Processamento ainda não concluído")
 
-    caminho = job.shopee_path if tipo == "shopee" else job.erp_path
+    caminho = {
+        "shopee":  job.shopee_path,
+        "erp":     job.erp_path,
+        "kakashi": job.kakashi_path,
+    }[tipo]
     if not caminho or not Path(caminho).exists():
         raise HTTPException(404, detail="Arquivo não encontrado")
 
@@ -219,6 +227,7 @@ async def modelo(tipo: str):
 
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.comments import Comment
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -229,21 +238,24 @@ async def modelo(tipo: str):
 
     if tipo == "links":
         ws.title = "Links Etsy"
-        headers = ["LINK DO SITE ETSY"]
-        ws.column_dimensions["A"].width = 70
+        headers = ["QUANTIDADE", "LINK DO SITE ETSY"]
+        ws.column_dimensions["A"].width = 14
+        ws.column_dimensions["B"].width = 70
         # Linha de exemplo
-        ws.append(["https://www.etsy.com/pt/listing/123456789/nome-do-produto"])
+        ws.append([3, "https://www.etsy.com/pt/listing/123456789/nome-do-produto"])
         example_row = ws[2]
         for cell in example_row:
             cell.font = Font(color="9CA3AF", italic=True)
         filename = "modelo_links_etsy.xlsx"
     else:
         ws.title = "Links + Imagens"
-        headers = ["LINK DO SITE ETSY", "IMAGEM CAPA", "IMAGEM 1", "IMAGEM 2", "IMAGEM 3"]
-        ws.column_dimensions["A"].width = 60
-        for col in ["B", "C", "D", "E"]:
+        headers = ["QUANTIDADE", "LINK DO SITE ETSY", "IMAGEM CAPA", "IMAGEM 1", "IMAGEM 2", "IMAGEM 3"]
+        ws.column_dimensions["A"].width = 14
+        ws.column_dimensions["B"].width = 60
+        for col in ["C", "D", "E", "F"]:
             ws.column_dimensions[col].width = 45
         ws.append([
+            3,
             "https://www.etsy.com/pt/listing/123456789/nome-do-produto",
             "https://i.etsystatic.com/xxx/capa.jpg",
             "https://i.etsystatic.com/xxx/img1.jpg",
@@ -262,6 +274,18 @@ async def modelo(tipo: str):
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center")
+
+    # Tooltip explicando os valores aceitos na coluna QUANTIDADE
+    quantidade_comment = Comment(
+        "Coluna QUANTIDADE:\n"
+        "  1     = Solo (Q1)\n"
+        "  2 a 9 = Kit (KIT2 a KIT9)\n"
+        "  Vazio = Detecção automática pelo LLM",
+        "Peter",
+    )
+    quantidade_comment.width = 280
+    quantidade_comment.height = 90
+    ws["A1"].comment = quantidade_comment
 
     buf = io.BytesIO()
     wb.save(buf)

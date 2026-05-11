@@ -1,0 +1,1670 @@
+{
+  "TextoBiblicoJeremias": {
+    "display": "Texto Biblico Jeremias",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AguasCristalinas": {
+    "display": "Aguas Cristalinas No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoModerno": {
+    "display": "Kit Quadros Decorativos Abstrato Moderno No1 Quadro Para Sala, Escritorio e Quarto",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Acreditar": {
+    "display": "Acreditar No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoModernoAzul": {
+    "display": "Kit Quadros Decorativos Abstrato Moderno Azul No1 Para Sala, Escritorio e Quarto",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MoverMontanhas": {
+    "display": "Mover Montanhas No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "LinhasECurvas": {
+    "display": "Linhas e Curvas",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoMinimalista": {
+    "display": "Quadro Para Sala, Escritorio e Quarto",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "DeusEBom": {
+    "display": "Deus e Bom No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "EvangelhoDeMatheus": {
+    "display": "Evangelho de Matheus",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BohoBlue": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Jesus": {
+    "display": "Jesus No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "CaminharNoDeserto": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "TextosBiblicos": {
+    "display": "Textos Biblicos No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoBoho": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "CruzDaSalvacao": {
+    "display": "Cruz da Salvacao No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Farol": {
+    "display": "Farol No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "PassosDeJesus": {
+    "display": "Passos de Jesus No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "JesusBuscaSuaOvelha": {
+    "display": "Jesus Busca Sua Ovelha No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "GodIsGood": {
+    "display": "God Is Good No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Renovo": {
+    "display": "Renovo No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Salmo23": {
+    "display": "Salmo 23 No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "OTempoDeDeus": {
+    "display": "O Tempo de Deus No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "OreSobreTudo": {
+    "display": "Ore Sobre Tudo  No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FeAcimaDoMedo": {
+    "display": "Fe Acima do Medo",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "AndarSobreAsAguas": {
+    "display": "Andar Sobre As Aguas No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PinceladasBrancas": {
+    "display": "Pinceladas Brancas No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FolhasDeOutono": {
+    "display": "Folhas de Outono",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Salvacao": {
+    "display": "Salvacao No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "SobreAsAguas": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CruzDeCristo": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "LeaoDeJudaEOCordeiro": {
+    "display": "Leao de Juda e O Cordeiro No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PalmeirasTropical": {
+    "display": "Palmeiras Tropical No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "CaminhosDoMar": {
+    "display": "Caminhos do Mar No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ParedeBoho": {
+    "display": "Parede Boho",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MulherNegra": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Praia": {
+    "display": "Praia No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ConchasDoMar": {
+    "display": "Conchas do Mar No1",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BondadesDeDeus": {
+    "display": "Bondades de Deus No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Bondade": {
+    "display": "Bondade No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Jeremias29": {
+    "display": "Jeremias 29 No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PastorFiel": {
+    "display": "No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "VersiculosSalmosEMatheus": {
+    "display": "Versiculos Salmos e Matheus",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FeEsperancaEAmor": {
+    "display": "Fe, Esperança e Amor",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "God": {
+    "display": "God No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FeEmCristo": {
+    "display": "Fe Em Cristo No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FloresBrancas": {
+    "display": "Flores Brancas",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FloresGeometricas": {
+    "display": "Flores Geometricas",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ReiDeJuda": {
+    "display": "Rei de Juda No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "SafariTribal": {
+    "display": "Safari Tribal",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BoemiaAbstrata": {
+    "display": "Boemia Abstrata",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoNatural": {
+    "display": "Abstrato Natural",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoTerroso": {
+    "display": "Abstrato Terroso",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Costa": {
+    "display": "Costa",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Ciclos": {
+    "display": "Ciclos",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FormasModernas": {
+    "display": "Formas Modernas",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "LeaoDeJuda": {
+    "display": "Leao de Juda No1",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FrutosDoEspirito": {
+    "display": "Frutos do Espirito",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MontanhasModerno": {
+    "display": "Montanhas Moderno",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "PrimaryFlow": {
+    "display": "Primary Flow No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Digitais": {
+    "display": "Digitais No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "SharpContrast": {
+    "display": "Sharp Contrast No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "JesusIsKing": {
+    "display": "Jesus Is King No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "DeusNoComando": {
+    "display": "Deus No Comando No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FreeDance": {
+    "display": "Free Dance No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PazReal": {
+    "display": "Paz Real No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FlatStructure": {
+    "display": "Flat Structure No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FeminineEnergy": {
+    "display": "Feminine Energy No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "LoveLikeJesus": {
+    "display": "Love Like Jesus No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "TurnOnTheMusic": {
+    "display": "Turn on The Music",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ColorFields": {
+    "display": "Color Fields No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstractKit": {
+    "display": "Abstract Kit No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "CleanSpace": {
+    "display": "Clean Space No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "VolumeEEspaco": {
+    "display": "Volume e Espaco No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "EleVive": {
+    "display": "Ele Vive No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AbstractLines": {
+    "display": "Abstract Lines No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CirculoELinha": {
+    "display": "Circulo e Linha No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "BikesBauhaus": {
+    "display": "Bikes Bauhaus No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Ondas": {
+    "display": "Ondas No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ArtInStroke": {
+    "display": "Art In Stroke No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "HarmoniaAzul": {
+    "display": "Harmonia Azul No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AbstractModule": {
+    "display": "Abstract Module No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "BohoAbstratoModerno": {
+    "display": "Boho Abstrato Moderno",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SalELuz": {
+    "display": "Sal e Luz No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CincoPaesEDoisPeixes": {
+    "display": "Cinco Paes e Dois Peixes No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "LineOrder": {
+    "display": "Line Order No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ArquiteturaBauhaus": {
+    "display": "Arquitetura Bauhaus No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "VerdesELinhas": {
+    "display": "Verdes e Linhas No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CircleSpace": {
+    "display": "Circle Space No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AmoreJesus": {
+    "display": "Amore Jesus No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AngledVision": {
+    "display": "Angled Vision No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Abstrat": {
+    "display": "Abstrat No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Contornos": {
+    "display": "Contornos No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ComposicaoBauhaus": {
+    "display": "Composição Bauhaus No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "ColorCode": {
+    "display": "Color Code No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ClearForm": {
+    "display": "Clear Form No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FaceEContorno": {
+    "display": "Face e Contorno No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "CruzEAmor": {
+    "display": "Cruz e Amor No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "TudoNovoB": {
+    "display": "Tudo Novo B No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "GradeModerna": {
+    "display": "Grade Moderna No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Salmo11911": {
+    "display": "Salmo 119-11 No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "GeometricBalance": {
+    "display": "Geometric Balance No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "GraphicFusion": {
+    "display": "Graphic Fusion No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FeSemFiltro": {
+    "display": "Fé Sem Filtro No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FirmadaNele": {
+    "display": "Firmada Nele No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Galatas522": {
+    "display": "Galatas 5-22 No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ViveEmMim": {
+    "display": "Vive Em Mim No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ArteGeometrica": {
+    "display": "Arte Geometrica No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ShapedThoughts": {
+    "display": "Shaped Thoughts No1",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Amour": {
+    "display": "Amour No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CirculoDoOriente": {
+    "display": "Circulo doOriente No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CoracaoFirme": {
+    "display": "Coracao Firme No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ShapeHarmony": {
+    "display": "Shape Harmony No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "VisualGrid": {
+    "display": "Visual Grid No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "StraightForms": {
+    "display": "Straight Forms No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "GodIsLovePink": {
+    "display": "God Is Love Pink No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "UrbanFlat": {
+    "display": "Urban Flat No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "JardimTerroso": {
+    "display": "Jardim Terroso",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "HarmoniaDasCores": {
+    "display": "Harmonia Das Cores No1",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "ColorWave": {
+    "display": "Color Wave No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "JesusChrist": {
+    "display": "Jesus Christ No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Salmo4610": {
+    "display": "Salmo 46-10 No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Joao1930": {
+    "display": "Joao 19-30 No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Sardinhas": {
+    "display": "Sardinhas No2",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BoemiaModerna": {
+    "display": "Boemia Moderna",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Oceanos": {
+    "display": "Oceanos",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SimetriaRed": {
+    "display": "Simetria Red No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Sertao": {
+    "display": "Sertao",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "Tropical": {
+    "display": "Tropical",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FormasPretoEBranco": {
+    "display": "Formas Preto e Branco",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Prazeres": {
+    "display": "Prazeres",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SolRadiante": {
+    "display": "Sol Radiante",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FloresDoOutono": {
+    "display": "Flores do Outono",
+    "loja": "iPaper",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "NoveVidas": {
+    "display": "Nove Vidas",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "RamosDeFlores": {
+    "display": "Ramos de Flores",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FloresEmTracos": {
+    "display": "Flores em Traços",
+    "loja": "iPaper",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MyGodCan": {
+    "display": "My God Can No1",
+    "loja": "iPaper",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Lucky777": {
+    "display": "Kit 3 Quadros Decorativos Luck 777 Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "PicassoMatisseEBauhaus": {
+    "display": "Kit 3 Quadros Decorativos Picasso Matisse e Bauhaus",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FelicidadeEuforia": {
+    "display": "Kit 3 Quadros Decorativos Felicidade, Euforia e Inspiração",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "CozinhaTemperada": {
+    "display": "Cozinha temperada",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "JardimDaMargaridas": {
+    "display": "Jardim da Margaridas",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "HaringSkate": {
+    "display": "Kit 3 Quadros Decorativos Haring Skate Pisa89 Flower Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FloresBoho": {
+    "display": "Flores Boho No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausPretoEBrancoNo2": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Preto e Branco Minimalista No2",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MoreAmorRosaELaranja": {
+    "display": "Kit 3 Quadros Decorativos More Amor Rosa e Laranja Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Ramos": {
+    "display": "Kit 3 Quadros Decorativos Ramos Para Sala e Quarto",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SignoCancerSelfLove": {
+    "display": "Kit 3 Quadros Decorativos Signo Cancer Self Love Club",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "RosaXoXo": {
+    "display": "Perfeito para Quarto e Sala",
+    "loja": "AllQuadros",
+    "tipo": "KIT6",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausMatisseFlowers": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Matisse Flowers",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Barcelona": {
+    "display": "Barcelona",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FrutasEmMarche": {
+    "display": "Frutas em Marche",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "PorDoSol": {
+    "display": "Por do Sol",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "JardimMatisse": {
+    "display": "Jardim Matisse",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MatissePinkFlowers": {
+    "display": "Kit 3 Quadros Decorativos Matisse Pink Flowers Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Lucky777Preto": {
+    "display": "Kit 3 Quadros Decorativos Lucky You 777 Preto Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "HojeVaiSerUmBomDia": {
+    "display": "Kit 3 Quadros Decorativos Hoje Vai Ser Um Bom Dia",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "DrinksLinhasPretas": {
+    "display": "Kit 3 Quadros Decorativos Drinks Linhas Pretas Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "LinhasIllusion": {
+    "display": "Kit 3 Quadros Decorativos Linhas Illusion Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausPretoEBrancoNo1": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Preto e Branco Minimalista No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AmorAfirmacoesPositivas": {
+    "display": "Kit 3 Quadros Decorativos Amor Afirmações Positivas Paz Moderno Verde",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "KeithHaring": {
+    "display": "Kit 3 Quadros Decorativos  Keith Haring No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AzulLuckyUs": {
+    "display": "Kit 3 Quadros Decorativos Azul Lucky Us Minimalista No2",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BohoOlhoGrego": {
+    "display": "Kit 3 Quadros Decorativos Boho Olho Grego Boas Energias",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MenteCorpoEAlma": {
+    "display": "Kit 3 Quadros Decorativos Mente Corpo e Alma",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SejaPacienteEFiel": {
+    "display": "Kit 3 Quadros Decorativos Seja Paciente e Fiel nas Orações Frase Ingles Moderno Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "MatisseAzulNo2": {
+    "display": "Kit 3 Quadros Decorativos Matisse Azul Moderno Minimalista No2",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoModernoNo1": {
+    "display": "Kit 3 Quadros Decorativos Abstratos Moderno No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausMatisseAzul": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Matisse Azul",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "YogaChackras": {
+    "display": "Kit 3 Quadros Decorativos Yoga Chackras Meditação Maktube",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "CookLoverClub": {
+    "display": "Kit 3 Quadros Decorativos Cook Lover Club",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Curvas": {
+    "display": "Quadro Decorativo Curvas Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "LoveVintage70s": {
+    "display": "Love Vintage 70S",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FlowerMarket": {
+    "display": "Flower Market No. 14",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "HouseRules": {
+    "display": "House Rules",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "NossoLugarFeliz": {
+    "display": "Quadro Decorativo Nosso Lugar Feliz Moderno",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AmoMinhaCama": {
+    "display": "Quadro Decorativo Amo Minha Cama",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "MatisseFloral": {
+    "display": "Kit 6 Quadros Decorativos Matisse Floral",
+    "loja": "AllQuadros",
+    "tipo": "KIT6",
+    "criado_em": "2026-04-11"
+  },
+  "GoodVibesOnly": {
+    "display": "Quadro Decorativo Good Vibes Only",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FrasesFrances": {
+    "display": "Quadro Decorativo Frase Frances Minimalista Moderno Azul",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratoModernoNo2": {
+    "display": "Kit 3 Quadros Decorativos Abstratos Modernos No2",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausLaranjaERosa": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Laranja e Rosa",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ThisIsTheGoodPart": {
+    "display": "Quadro Decorativo This is The Good Part Aesthetic",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "VoceTemPotencial": {
+    "display": "Quadro Decorativo Você Tem Potencial Para Fazer Coisa Lindas Frase Ingles Moderno",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Aesthetic": {
+    "display": "Kit 3 Quadros Decorativos Aesthetic No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "IdentidadLatinoAmericana": {
+    "display": "Quadro Decorativo Identidad LatinoAmericana",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "OkieDoke": {
+    "display": "Quadro Decorativo Okie Doke Moderno Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CristoRedentor": {
+    "display": "Quadro Decorativo Cristo Redentor Moderno Brasil",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Skate": {
+    "display": "Esportes e Paisagem Para Sala, Quarto Ou Escritório",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "TameImpala": {
+    "display": "Kit 3 Quadros Decorativos Tame Impala",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "ItsOkColorido": {
+    "display": "Kit 2 Quadros Decorativos Its OK Colorido Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "FormasGeometricas": {
+    "display": "Kit 8 Quadros Decorativos Formas Geometricas Modernas",
+    "loja": "AllQuadros",
+    "tipo": "KIT8",
+    "criado_em": "2026-04-11"
+  },
+  "DogSalsinha": {
+    "display": "Kit 2 Quadros Decorativos Desenho Dog Salsinha Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausPicassoMatisseRosa": {
+    "display": "Kit 3 Quadros Decorativos Bauhaus Picasso Matisse Rosa",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "AbstratosAestheticNo1": {
+    "display": "Kit 5 Quadros Decorativos Abstratos Aesthetic No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT5",
+    "criado_em": "2026-04-11"
+  },
+  "Barcos": {
+    "display": "Barcos No1",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "ILoveYouMorena": {
+    "display": "Quadro Decorativo I Love You Morena",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "DrinksI": {
+    "display": "Drinks I",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "LasVegasFormula1": {
+    "display": "Kit 5 Quadros Decorativos Las Vegas Formula 1 Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT5",
+    "criado_em": "2026-04-11"
+  },
+  "SolEmLinhas": {
+    "display": "Sol em Linhas",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BohemioVintage": {
+    "display": "Bohemio Vintage",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "Passos": {
+    "display": "Kit 2 Quadros Decorativos Passos No1 Paisagem Para Sala, Quarto Ou Escritório",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-11"
+  },
+  "RedLinesModerno": {
+    "display": "Red Lines Moderno",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "MoreAmorPorFavor": {
+    "display": "More Amor Por Favor",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CarrosNo3": {
+    "display": "Quarto Bebe Menino Moderno No3",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "QuartoBebeMeninoMeninaModerno": {
+    "display": "Quarto Bebe Menino Menina Moderno",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "SonhosEPreocupacoes": {
+    "display": "Quadro Decorativo Sonhos e Preocupações Frases Ingles Moderno Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "CafeModerno": {
+    "display": "Quadro Decorativo Café Moderno",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PorVoceEuIriaDoRioASalvador": {
+    "display": "Quadro Decorativo Por Você Eu Iria a Pé do Rio à Salvador",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Rj": {
+    "display": "RJ No1",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FundoOceanoNo5": {
+    "display": "Quarto Bebe Menino Moderno No5",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "OSorrisoEAUnicaCurva": {
+    "display": "O Sorriso é a única curva que endireita as coisas",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "YayoiKusamaII": {
+    "display": "Yayoi Kusama II",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "SafariVintage": {
+    "display": "Safari Vintage",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "FloresGirassolNo1": {
+    "display": "Kit 3 Quadros Decorativos Infantil Flores Girassol- Quarto Bebe Menina Moderno No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-11"
+  },
+  "BauhausYellow1923": {
+    "display": "Bauhaus Yellow 1923",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "Copacabana": {
+    "display": "Copacabana No1",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "GoodMoodDelicado": {
+    "display": "Kit 8 Quadros Decorativos Good Mood Delicado",
+    "loja": "AllQuadros",
+    "tipo": "KIT8",
+    "criado_em": "2026-04-11"
+  },
+  "SignoScorpio": {
+    "display": "Quadro Decorativo Signo Scorpio Aesthetic",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "FundoOceanoNo1": {
+    "display": "Quarto Bebe Menino Moderno No1",
+    "loja": "AllQuadros",
+    "tipo": "KIT6",
+    "criado_em": "2026-04-11"
+  },
+  "YouWonMyHeart": {
+    "display": "You Won My Heart",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "RulesBeKind": {
+    "display": "Rules Be Kind",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "PlayItTwiceVinilVintage": {
+    "display": "Play It Twice Vinil Vintage",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "YayoiKusamaIII": {
+    "display": "Yayoi Kusama III",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "OliveiraGetsemani": {
+    "display": "Oliveira no Getsêmani",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-11"
+  },
+  "MulherTocaJesus": {
+    "display": "Mulher Toca Jesus",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "VidaCrista": {
+    "display": "Vida Cristã",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "OvelhaPerdida": {
+    "display": "Ovelha Perdida",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "TriadeDaFe": {
+    "display": "Tríade da Fé",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "BomPastor": {
+    "display": "Bom Pastor",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "EleRessuscitou": {
+    "display": "Ele Ressuscitou",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "VersosEspirituais": {
+    "display": "Versos Espirituais",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "FeCrista": {
+    "display": "Fé Cristã",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "Espiritualidade": {
+    "display": "Espiritualidade",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "JesusLavandoPes": {
+    "display": "Jesus Lavando Pés",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "RomanosEsperanca": {
+    "display": "Romanos 15:13 Esperança",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "PescaMilagrosa": {
+    "display": "Pesca Milagrosa",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "CafeDaManha": {
+    "display": "Café da Manhã",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "MilagreDaPesca": {
+    "display": "Milagre da Pesca",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "CapturaMilagrosa": {
+    "display": "Captura Milagrosa",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "Jeremias": {
+    "display": "Jeremias",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "CoresCristas": {
+    "display": "Cores Cristãs",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "MateusPassaros": {
+    "display": "Mateus 6:26 Pássaros",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "EscriturasCasal": {
+    "display": "Escrituras Casal",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "BalaoEspiritual": {
+    "display": "Balão Espiritual",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "AnimaisSavana": {
+    "display": "Animais da Savana",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "UnicornioEspiritual": {
+    "display": "Unicórnio Espiritual",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "Lucas": {
+    "display": "Lucas 15:3",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "JesusAlimenta": {
+    "display": "Jesus Alimenta 5000",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "JesusEPesca": {
+    "display": "Jesus E A Pesca",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "MilagrePesca": {
+    "display": "Milagre da Pesca",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "JesusEPedro": {
+    "display": "Jesus E Pedro",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "FloresParaBebe": {
+    "display": "Flores Para Bebê",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "FloresSilvestres": {
+    "display": "Flores Silvestres",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "Salmos": {
+    "display": "Salmos",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "AbstracaoCinza": {
+    "display": "Abstração Cinza",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "AbstracaoEspiritual": {
+    "display": "Abstração Espiritual",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "SolMar": {
+    "display": "Sol Mar",
+    "loja": "PPJ",
+    "tipo": "Q1",
+    "criado_em": "2026-04-28"
+  },
+  "FeAbstrata": {
+    "display": "Fé Abstrata",
+    "loja": "PPJ",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-28"
+  },
+  "TrindadeEspiritual": {
+    "display": "Trindade Espiritual",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "FeEmAquarela": {
+    "display": "Fé em Aquarela",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "FeBoho": {
+    "display": "Fé Boho",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "VersiculosSagrados": {
+    "display": "Versículos Sagrados",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "SalmosBercario": {
+    "display": "Salmos Bercário",
+    "loja": "PPJ",
+    "tipo": "KIT3",
+    "criado_em": "2026-04-28"
+  },
+  "AbstratoBege": {
+    "display": "Abstrato Bege",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-29"
+  },
+  "XicaraCafe": {
+    "display": "Xícara de Café",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "MergulhadorCafe": {
+    "display": "Mergulhador de Café",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "CanecasEmpilhadas": {
+    "display": "Canecas Empilhadas",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "EstiloJapandi": {
+    "display": "Estilo Japandi",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "AnimaisTropicais": {
+    "display": "Animais Tropicais",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-29"
+  },
+  "Bando": {
+    "display": "Bando De",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-29"
+  },
+  "MulherMinimalista": {
+    "display": "Mulher Minimalista",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "NaturezaTropical": {
+    "display": "Natureza Tropical",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-29"
+  },
+  "PaisagemTropical": {
+    "display": "Paisagem Tropical",
+    "loja": "AllQuadros",
+    "tipo": "KIT2",
+    "criado_em": "2026-04-29"
+  },
+  "RetratoFeminino": {
+    "display": "Retrato Feminino",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "MulherNegraGato": {
+    "display": "Mulher Negra Gato",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "AconchegoTropical": {
+    "display": "Aconchego Tropical",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  },
+  "AmantesNatureza": {
+    "display": "Amantes Da Natureza",
+    "loja": "AllQuadros",
+    "tipo": "Q1",
+    "criado_em": "2026-04-29"
+  }
+}

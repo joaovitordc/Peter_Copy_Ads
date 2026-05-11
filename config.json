@@ -9,62 +9,237 @@
   "origem_produto": "0 - Nacional, exceto as indicadas nos códigos 3 a 5",
   "categoria_erp": "Quadros Decorativos",
   "imagens_fixas": {
-    "img4": "https://i.postimg.cc/9FqFR363/1-MELI.jpg",
-    "img5": "https://i.postimg.cc/8Cw1QT6v/2-MELI.jpg",
-    "img6": "https://i.postimg.cc/cLRxhR1X/3-MELI.jpg",
-    "img7": "https://i.postimg.cc/LsmHbJnR/4-MELI.jpg",
-    "img8": "https://i.postimg.cc/wj8xDfz1/5-MELI.jpg"
+    "PPJ": {
+      "img4": "https://i.ibb.co/2159wVWK/f4d1057ed749.png",
+      "img5": "https://i.ibb.co/HfJzK0xR/64dbf03799bc.png",
+      "img6": "https://i.ibb.co/1jvd8m1/3da3e8c3bbb6.png",
+      "img7": "https://i.ibb.co/GmhDfBw/94c9bf494a9a.png",
+      "img8": "https://i.ibb.co/RkjnxT37/598e5af096a1.png"
+    },
+    "iPaper": {
+      "img4": "https://i.ibb.co/0y3ZWJDW/1b8eb805ff31.png",
+      "img5": "https://i.ibb.co/Hpq7qfsM/daabad720acf.png",
+      "img6": "https://i.ibb.co/dw9dt9hx/22dbf267c49b.png",
+      "img7": "https://i.ibb.co/dwXmd49C/1deec82f2f21.png",
+      "img8": "https://i.ibb.co/tM3XzgFL/fe362c51a0a8.png"
+    },
+    "AllQuadros": {
+      "img4": "https://i.ibb.co/dJDGhL6s/61d43c09168c.png",
+      "img5": "https://i.ibb.co/DDG16z05/f7ff194ed76f.png",
+      "img6": "https://i.ibb.co/Rpn78Hts/58ad16b6edc9.png",
+      "img7": "https://i.ibb.co/MyHwyf6x/69d8e29c1285.png",
+      "img8": "https://i.ibb.co/hRz7rGzr/41b78c657fa6.png"
+    },
+    "DecorKids": {
+      "img4": "https://i.ibb.co/dJDGhL6s/61d43c09168c.png",
+      "img5": "https://i.ibb.co/DDG16z05/f7ff194ed76f.png",
+      "img6": "https://i.ibb.co/Rpn78Hts/58ad16b6edc9.png",
+      "img7": "https://i.ibb.co/MyHwyf6x/69d8e29c1285.png",
+      "img8": "https://i.ibb.co/hRz7rGzr/41b78c657fa6.png"
+    }
   },
   "precos": {
     "Q1": {
-      "2030": {"SM": 19.90, "CM": 59.90},
-      "3040": {"SM": 29.90, "CM": 79.90},
-      "4060": {"SM": 49.90, "CM": 109.90},
-      "5070": {"SM": 69.90, "CM": 149.90},
-      "6090": {"SM": 89.90, "CM": 199.90}
+      "2030": {
+        "SM": 19.9,
+        "CM": 59.9
+      },
+      "3040": {
+        "SM": 29.9,
+        "CM": 79.9
+      },
+      "4060": {
+        "SM": 49.9,
+        "CM": 109.9
+      },
+      "5070": {
+        "SM": 69.9,
+        "CM": 149.9
+      },
+      "6090": {
+        "SM": 89.9,
+        "CM": 199.9
+      }
     },
     "KIT2": {
-      "3040": {"SM": 49.90, "CM": 129.90},
-      "4060": {"SM": 79.90, "CM": 169.90}
+      "3040": {
+        "SM": 49.9,
+        "CM": 129.9
+      },
+      "4060": {
+        "SM": 79.9,
+        "CM": 169.9
+      }
     },
     "KIT3": {
-      "2030": {"SM": 59.90, "CM": 119.90},
-      "3040": {"SM": 69.90, "CM": 189.90},
-      "4060": {"SM": 109.90, "CM": 249.90},
-      "5070": {"SM": 179.90, "CM": 369.90},
-      "6090": {"SM": 249.90, "CM": 499.90}
+      "2030": {
+        "SM": 59.9,
+        "CM": 119.9
+      },
+      "3040": {
+        "SM": 69.9,
+        "CM": 189.9
+      },
+      "4060": {
+        "SM": 109.9,
+        "CM": 249.9
+      },
+      "5070": {
+        "SM": 179.9,
+        "CM": 369.9
+      },
+      "6090": {
+        "SM": 249.9,
+        "CM": 499.9
+      }
+    },
+    "KIT4": {
+      "3040": {
+        "SM": 89.9,
+        "CM": 244.9
+      },
+      "4060": {
+        "SM": 139.9,
+        "CM": 324.9
+      }
     },
     "KIT5": {
-      "3040": {"SM": 109.90, "CM": 299.90},
-      "4060": {"SM": 169.90, "CM": 399.90}
+      "3040": {
+        "SM": 109.9,
+        "CM": 299.9
+      },
+      "4060": {
+        "SM": 169.9,
+        "CM": 399.9
+      }
     },
     "KIT6": {
-      "3040": {"SM": 129.90, "CM": 349.90},
-      "4060": {"SM": 199.90, "CM": 469.90}
+      "3040": {
+        "SM": 129.9,
+        "CM": 349.9
+      },
+      "4060": {
+        "SM": 199.9,
+        "CM": 469.9
+      }
+    },
+    "KIT7": {
+      "3040": {
+        "SM": 149.9,
+        "CM": 399.9
+      },
+      "4060": {
+        "SM": 229.9,
+        "CM": 539.9
+      }
+    },
+    "KIT8": {
+      "3040": {
+        "SM": 169.9,
+        "CM": 449.9
+      },
+      "4060": {
+        "SM": 259.9,
+        "CM": 609.9
+      }
+    },
+    "KIT9": {
+      "3040": {
+        "SM": 189.9,
+        "CM": 499.9
+      },
+      "4060": {
+        "SM": 289.9,
+        "CM": 679.9
+      }
     }
   },
   "variacoes": [
-    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Sem Moldura", "mol_sku": "SM", "tipo_mold": "SM"},
-    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Preta", "mol_sku": "MP", "tipo_mold": "CM"},
-    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Branca", "mol_sku": "MB", "tipo_mold": "CM"},
-    {"tamanho": "30x40", "tam_sku": "3040", "moldura": "Moldura Madeira", "mol_sku": "MM", "tipo_mold": "CM"},
-    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Sem Moldura", "mol_sku": "SM", "tipo_mold": "SM"},
-    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Preta", "mol_sku": "MP", "tipo_mold": "CM"},
-    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Branca", "mol_sku": "MB", "tipo_mold": "CM"},
-    {"tamanho": "40x60", "tam_sku": "4060", "moldura": "Moldura Madeira", "mol_sku": "MM", "tipo_mold": "CM"}
+    {
+      "tamanho": "30x40",
+      "tam_sku": "3040",
+      "moldura": "Sem Moldura",
+      "mol_sku": "SM",
+      "tipo_mold": "SM"
+    },
+    {
+      "tamanho": "30x40",
+      "tam_sku": "3040",
+      "moldura": "Moldura Preta",
+      "mol_sku": "MP",
+      "tipo_mold": "CM"
+    },
+    {
+      "tamanho": "30x40",
+      "tam_sku": "3040",
+      "moldura": "Moldura Branca",
+      "mol_sku": "MB",
+      "tipo_mold": "CM"
+    },
+    {
+      "tamanho": "30x40",
+      "tam_sku": "3040",
+      "moldura": "Moldura Madeira",
+      "mol_sku": "MM",
+      "tipo_mold": "CM"
+    },
+    {
+      "tamanho": "40x60",
+      "tam_sku": "4060",
+      "moldura": "Sem Moldura",
+      "mol_sku": "SM",
+      "tipo_mold": "SM"
+    },
+    {
+      "tamanho": "40x60",
+      "tam_sku": "4060",
+      "moldura": "Moldura Preta",
+      "mol_sku": "MP",
+      "tipo_mold": "CM"
+    },
+    {
+      "tamanho": "40x60",
+      "tam_sku": "4060",
+      "moldura": "Moldura Branca",
+      "mol_sku": "MB",
+      "tipo_mold": "CM"
+    },
+    {
+      "tamanho": "40x60",
+      "tam_sku": "4060",
+      "moldura": "Moldura Madeira",
+      "mol_sku": "MM",
+      "tipo_mold": "CM"
+    }
   ],
   "lojas": {
     "PPJ": {
-      "titulo_padrao": "Quadro Decorativo {seo} Para Sala, Escritório e Quarto - {nome_arte}",
-      "marca_erp": "PPJ"
+      "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Escritório e Quarto - {nome_arte}",
+      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Escritório e Quarto - {nome_arte}",
+      "marca_erp": "PPJ",
+      "tema_loja": "religioso, cristão, bíblico, espiritual, fé, salmos, versículos",
+      "prefixo_descricao_erp": ""
     },
     "iPaper": {
-      "titulo_padrao": "Quadro Decorativo {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
-      "marca_erp": "iPaper"
+      "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
+      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
+      "marca_erp": "iPaper",
+      "tema_loja": "abstrato, moderno, Bauhaus, geométrico, minimalista, design contemporâneo",
+      "prefixo_descricao_erp": ""
     },
     "AllQuadros": {
-      "titulo_padrao": "Kit {n} Quadros Decorativos {seo} Moderno - {nome_arte}",
-      "marca_erp": "AllQuadros"
+      "titulo_padrao_q1":  "Quadro Decorativo {seo} Moderno - {nome_arte}",
+      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Modernos - {nome_arte}",
+      "marca_erp": "AllQuadros",
+      "tema_loja": "vintage, natureza, tropical, floral, botânico, paisagem, animais",
+      "prefixo_descricao_erp": ""
+    },
+    "DecorKids": {
+      "titulo_padrao_q1":  "Quadro Decorativo Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
+      "titulo_padrao_kit": "Kit {n} Quadros Decorativos Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
+      "marca_erp": "DecorKids",
+      "tema_loja": "animais fofos, natureza boho, transporte, carros, fundo do mar, flores, arco iris, fada, bailarina, safari, lúdico, fofo, colorido",
+      "prefixo_descricao_erp": "Infantil "
     }
   }
 }

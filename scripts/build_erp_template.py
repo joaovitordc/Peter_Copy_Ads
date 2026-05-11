@@ -48,12 +48,15 @@ MOLDURA_NOME = {
 
 # Mapeamento tipo para descricao por extenso
 TIPO_NOME = {
-    "Q1": "Quadro",
+    "Q1":   "Quadro",
     "KIT2": "Kit 2 Quadros",
     "KIT3": "Kit 3 Quadros",
+    "KIT4": "Kit 4 Quadros",
     "KIT5": "Kit 5 Quadros",
     "KIT6": "Kit 6 Quadros",
+    "KIT7": "Kit 7 Quadros",
     "KIT8": "Kit 8 Quadros",
+    "KIT9": "Kit 9 Quadros",
 }
 
 
@@ -71,7 +74,9 @@ def linha_vazia(n=64):
 def gerar_erp(input_json: dict, output_dir: str, loja: str = None) -> str:
     loja = loja or input_json.get("loja", "LOJA")
     produtos = input_json.get("produtos", [])
-    marca = CONFIG["lojas"].get(loja, {}).get("marca_erp", loja)
+    loja_config = CONFIG["lojas"].get(loja, {})
+    marca = loja_config.get("marca_erp", loja)
+    prefixo = loja_config.get("prefixo_descricao_erp", "")
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -129,10 +134,11 @@ def gerar_erp(input_json: dict, output_dir: str, loja: str = None) -> str:
         img_capa = produto.get("imagem_capa", "")
 
         # Linha do produto PAI (tipo V)
-        desc_pai = f"{tipo_nome} - {nome_display}"
+        desc_pai = f"{tipo_nome} - {prefixo}{nome_display}"
         row_pai = make_row({
             "B": sku_pai,
             "C": desc_pai,
+            "G": 0,           # Preço do pai sempre 0 (preco real fica nos filhos)
             "AD": "V",
             "AE": img_capa,
             # AL vazio no pai (sem codigo do pai)
@@ -149,7 +155,7 @@ def gerar_erp(input_json: dict, output_dir: str, loja: str = None) -> str:
             tipo_mold = var["tipo_mold"]
             sku_filho = f"{tipo}_{tam_sku}{mol_sku}_{nome_sku}"
             preco = get_preco(tipo, tam_sku, tipo_mold)
-            desc_filho = f"{tipo_nome} - {nome_display} - {moldura} - {tamanho}"
+            desc_filho = f"{tipo_nome} - {prefixo}{nome_display} - {moldura} - {tamanho}"
             variacoes_str = f"Moldura:{moldura}||Tamanho:{tamanho}||"
 
             row_filho = make_row({

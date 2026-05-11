@@ -1,7 +1,7 @@
 /* ── Estado ────────────────────────────────────────────────────────────── */
 const state = {
   loja:         null,
-  modo:         'links_com_imagens',
+  modo:         null,
   arquivo:      null,
   jobId:        null,
   pollingTimer: null,
@@ -15,7 +15,8 @@ const dropzone       = $('dropzone');
 const fileInput      = $('file-input');
 const fileSelected   = $('file-selected');
 const fileName       = $('file-name');
-const btnProcessar   = $('btn-processar');
+const btnProcessar      = $('btn-processar');
+const btnProcessarLabel = $('btn-processar-label');
 
 const formSection     = $('form-section');
 const progressSection = $('progress-section');
@@ -28,8 +29,9 @@ const progressBarFill = $('progress-bar-fill');
 const progressBar     = progressSection?.querySelector('[role=progressbar]');
 
 const resultSubtitle    = $('result-subtitle');
-const btnDownloadShopee = $('btn-download-shopee');
-const btnDownloadErp    = $('btn-download-erp');
+const btnDownloadShopee  = $('btn-download-shopee');
+const btnDownloadErp     = $('btn-download-erp');
+const btnDownloadKakashi = $('btn-download-kakashi');
 const avisosBox         = $('avisos-box');
 const avisosLista       = $('avisos-lista');
 const btnNovaPlanilha   = $('btn-nova-planilha');
@@ -39,10 +41,14 @@ const btnTentarNovamente = $('btn-tentar-novamente');
 
 /* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarTema();
   carregarLojas();
   configurarModos();
   configurarDropzone();
   configurarBotoes();
+  atualizarPainelPreview();
+  atualizarPainelTips();
+  atualizarPainelStatus();
 });
 
 /* ── Lojas ──────────────────────────────────────────────────────────────── */
@@ -55,7 +61,8 @@ async function carregarLojas() {
     renderizarLojas([
       { id: 'PPJ',        nome: 'PPJ',        descricao: 'Quadros religiosos e minimalistas' },
       { id: 'iPaper',     nome: 'iPaper',     descricao: 'Arte, Bauhaus e design moderno' },
-      { id: 'AllQuadros', nome: 'AllQuadros', descricao: 'Kits e conjuntos decorativos' },
+      { id: 'AllQuadros', nome: 'AllQuadros', descricao: 'Moderno, minimalista, boho' },
+      { id: 'DecorKids',  nome: 'DecorKids',  descricao: 'Quadros para decoração infantil' },
     ]);
   }
 }
@@ -89,6 +96,7 @@ function selecionarLoja(id) {
     c.setAttribute('aria-pressed', String(sel));
   });
   atualizarBotao();
+  atualizarPainelStatus();
 }
 
 /* ── Modos ──────────────────────────────────────────────────────────────── */
@@ -101,6 +109,8 @@ function configurarModos() {
         const inp = card.querySelector('input[name="modo"]');
         card.classList.toggle('selecionado', inp && inp.checked);
       });
+      atualizarPainelPreview();
+      atualizarPainelTips();
     });
   });
 }
@@ -151,6 +161,7 @@ function definirArquivo(file) {
   fileName.textContent = file.name;
   fileSelected.style.display = 'flex';
   atualizarBotao();
+  atualizarPainelStatus();
 }
 
 /* ── Botões ─────────────────────────────────────────────────────────────── */
@@ -160,10 +171,16 @@ function configurarBotoes() {
   btnTentarNovamente?.addEventListener('click', resetar);
   btnDownloadShopee?.addEventListener('click', () => baixarArquivo('shopee'));
   btnDownloadErp?.addEventListener('click', () => baixarArquivo('erp'));
+  btnDownloadKakashi?.addEventListener('click', () => baixarArquivo('kakashi'));
 }
 
 function atualizarBotao() {
-  btnProcessar.disabled = !(state.loja && state.arquivo);
+  btnProcessar.disabled = !(state.loja && state.modo && state.arquivo);
+  if (btnProcessarLabel) {
+    btnProcessarLabel.textContent = state.loja
+      ? `Processar como ${state.loja}`
+      : 'Processar Planilha';
+  }
 }
 
 /* ── Processamento ─────────────────────────────────────────────────────── */
@@ -212,17 +229,19 @@ async function consultarStatus() {
     atualizarProgresso(data.mensagem || '', data.percent || 0);
 
     if (data.status === 'concluido') { pararPolling(); mostrarResultado(data); }
-    else if (data.status === 'erro') { pararPolling(); mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.'); }
+    else if (data.status === 'erro') { pararPolling(); mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.', data.avisos); }
   } catch { /* retry na próxima iteração */ }
 }
 
 /* ── UI ─────────────────────────────────────────────────────────────────── */
 function mostrarSecao(secao) {
-  formSection.style.display     = secao === 'form'     ? '' : 'none';
-  progressSection.style.display = secao === 'progress' ? '' : 'none';
-  resultSection.style.display   = secao === 'result'   ? '' : 'none';
-  errorSection.style.display    = secao === 'error'    ? '' : 'none';
-  btnProcessar.style.display    = secao === 'form'     ? '' : 'none';
+  // formSection é um wrapper com display: contents (ver HTML) — preserva o grid
+  formSection.style.display     = secao === 'form'     ? 'contents' : 'none';
+  progressSection.style.display = secao === 'progress' ? 'flex'     : 'none';
+  resultSection.style.display   = secao === 'result'   ? 'flex'     : 'none';
+  errorSection.style.display    = secao === 'error'    ? 'block'    : 'none';
+  btnProcessar.style.display    = secao === 'form'     ? 'flex'     : 'none';
+  atualizarPainelStatus(secao);
 }
 
 function atualizarProgresso(mensagem, pct) {
@@ -251,8 +270,25 @@ function mostrarResultado(data) {
   mostrarSecao('result');
 }
 
-function mostrarErro(msg) {
+function mostrarErro(msg, avisos) {
   errorMsg.textContent = msg;
+
+  const box = document.getElementById('error-avisos-box');
+  const lista = document.getElementById('error-avisos-lista');
+  if (box && lista) {
+    if (avisos && avisos.length) {
+      lista.innerHTML = '';
+      avisos.forEach(av => {
+        const li = document.createElement('li');
+        li.textContent = av;
+        lista.appendChild(li);
+      });
+      box.style.display = '';
+    } else {
+      box.style.display = 'none';
+    }
+  }
+
   mostrarSecao('error');
 }
 
@@ -269,6 +305,7 @@ function baixarArquivo(tipo) {
 function resetar() {
   pararPolling();
   state.loja   = null;
+  state.modo   = null;
   state.arquivo = null;
   state.jobId   = null;
 
@@ -277,22 +314,134 @@ function resetar() {
     c.setAttribute('aria-pressed', 'false');
   });
 
-  // Resetar modo para padrão
-  const radioDefault = document.querySelector('input[name="modo"][value="links_com_imagens"]');
-  if (radioDefault) {
-    radioDefault.checked = true;
-    state.modo = 'links_com_imagens';
-    document.querySelectorAll('.modo-card').forEach(card => {
-      const inp = card.querySelector('input[name="modo"]');
-      card.classList.toggle('selecionado', inp?.value === 'links_com_imagens');
-    });
-  }
+  // Limpar seleção de modo
+  document.querySelectorAll('input[name="modo"]').forEach(r => { r.checked = false; });
+  document.querySelectorAll('.modo-card').forEach(c => c.classList.remove('selecionado'));
 
   fileInput.value           = '';
   fileSelected.style.display = 'none';
   fileName.textContent       = '';
   atualizarBotao();
   atualizarProgresso('Aguardando início...', 0);
+  atualizarPainelPreview();
+  atualizarPainelTips();
   mostrarSecao('form');
-  btnProcessar.style.display = '';
+}
+
+/* ── Tema (light/dark) ──────────────────────────────────────────────────── */
+function aplicarTema(tema) {
+  document.documentElement.dataset.theme = tema;
+  try { localStorage.setItem('theme', tema); } catch {}
+}
+
+function inicializarTema() {
+  const btn = $('theme-toggle');
+  if (!btn) return;
+  // O tema inicial já foi aplicado pelo script inline no <head> (anti-flash).
+  btn.addEventListener('click', () => {
+    const atual = document.documentElement.dataset.theme || 'light';
+    aplicarTema(atual === 'dark' ? 'light' : 'dark');
+  });
+}
+
+/* ── Painel direito ─────────────────────────────────────────────────────── */
+function atualizarPainelStatus(secao) {
+  const items = document.querySelectorAll('.info-status-item');
+  if (!items.length) return;
+
+  const checks = {
+    loja:       Boolean(state.loja),
+    modo:       Boolean(state.modo),
+    arquivo:    Boolean(state.arquivo),
+    processar:  secao === 'result',
+  };
+
+  // Primeiro passo não-completo é o ativo
+  let ativo = null;
+  if (!checks.loja) ativo = 'loja';
+  else if (!checks.modo) ativo = 'modo';
+  else if (!checks.arquivo) ativo = 'arquivo';
+  else if (secao === 'progress') ativo = 'processar';
+  else if (secao !== 'result') ativo = 'processar';
+
+  items.forEach(item => {
+    const step = item.dataset.step;
+    item.classList.toggle('done', Boolean(checks[step]));
+    item.classList.toggle('active', step === ativo);
+  });
+}
+
+function atualizarPainelPreview() {
+  const el = $('info-preview-content');
+  if (!el) return;
+
+  if (!state.modo) {
+    el.innerHTML = `
+      <p class="info-card-body">
+        Escolha um tipo de planilha no passo 2 para ver o formato esperado.
+      </p>
+    `;
+    return;
+  }
+
+  const isComImagens = state.modo === 'links_com_imagens';
+
+  const headerCells = isComImagens
+    ? ['Qtd', 'Link Etsy', 'Img 1', 'Img 2', 'Img 3', 'Img 4']
+    : ['Qtd', 'Link Etsy'];
+
+  const sampleRow = isComImagens
+    ? ['1',  'etsy.com/...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...']
+    : ['1',  'etsy.com/listing/...'];
+
+  const cols = isComImagens
+    ? '40px 1fr 60px 60px 60px 60px'
+    : '50px 1fr';
+
+  el.innerHTML = `
+    <div class="info-preview-table" role="presentation">
+      <div class="info-preview-row header" style="grid-template-columns: ${cols}">
+        ${headerCells.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
+      </div>
+      <div class="info-preview-row" style="grid-template-columns: ${cols}">
+        ${sampleRow.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
+      </div>
+      <div class="info-preview-row" style="grid-template-columns: ${cols}">
+        ${sampleRow.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
+      </div>
+    </div>
+    <p class="info-card-body" style="margin-top: 0.625rem;">
+      ${isComImagens
+        ? 'Cada linha = 1 anúncio. Imagens já pré-selecionadas pelo operador.'
+        : 'Apenas o link — Peter busca título e imagens automaticamente.'}
+    </p>
+  `;
+}
+
+function atualizarPainelTips() {
+  const el = $('info-tips-list');
+  if (!el) return;
+
+  const tipsBase = [
+    'A coluna "Qtd" (1-9) define o tipo do produto. Vazia = detecção automática.',
+    'O modo "Links + Imagens" é mais rápido e estável (sem APIs externas).',
+  ];
+
+  const tipsLinks = [
+    'O modo "Só Links" leva 3-5 min por anúncio (Firecrawl + filtro Gemini).',
+    'Free tier do Firecrawl é 5 chamadas/dia — para volume, faça upgrade.',
+  ];
+
+  const tips = state.modo === 'links' ? tipsLinks : tipsBase;
+
+  el.innerHTML = tips.map(t => `
+    <li class="info-tips-item">
+      <span class="tip-bullet" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="2.5" fill="currentColor"/>
+        </svg>
+      </span>
+      <span>${t}</span>
+    </li>
+  `).join('');
 }

@@ -23,10 +23,21 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 # Imports diretos (Vercel detecta estaticamente e inclui no bundle)
 import read_input as _read_input
-import fetch_etsy_images as _fetch_etsy
 import upload_images as _upload_images
 import build_shopee_template as _build_shopee
 import build_erp_template as _build_erp
+import export_kakashi as _export_kakashi
+import fetch_etsy_images as _fetch_etsy_api
+import fetch_etsy_firecrawl as _fetch_etsy_firecrawl
+
+
+def _get_etsy_fetcher():
+    """Escolhe o fetcher baseado nas API keys disponiveis. Firecrawl tem prioridade."""
+    if os.environ.get("FIRECRAWL_API_KEY"):
+        return _fetch_etsy_firecrawl
+    if os.environ.get("ETSY_API_KEY"):
+        return _fetch_etsy_api
+    return None
 
 # Importar config.json
 CONFIG_PATH = BASE_DIR / "config.json"
@@ -37,7 +48,9 @@ from web.art_name import gerar_nome_arte, gerar_titulo_seo
 
 
 class ProcessamentoError(Exception):
-    pass
+    def __init__(self, mensagem: str, avisos: list[str] | None = None):
+        super().__init__(mensagem)
+        self.avisos = avisos or []
 
 
 def _titulo_do_slug(url: str) -> str:
@@ -48,6 +61,121 @@ def _titulo_do_slug(url: str) -> str:
     slug = m.group(1)
     # "deus-e-bom-o-tempo-todo-arte-de-parede" → "Deus E Bom O Tempo Todo Arte De Parede"
     return ' '.join(w.capitalize() for w in slug.replace('-', ' ').split())
+
+
+def _carregar_skus_existentes() -> dict:
+    """Carrega skus_em_uso.json. Retorna dict vazio se nao existir."""
+    skus_path = BASE_DIR / "skus_em_uso.json"
+    if not skus_path.exists():
+        return {}
+    try:
+        with open(skus_path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _resolver_conflitos_sku(
+    produtos_brutos: list[dict],
+    avisos: list[str],
+    tema_loja: str = "",
+) -> None:
+    """
+    Para cada produto, garante que `nome_curto_ai` nao conflita com SKU ja
+    cadastrado em skus_em_uso.json (ou no proprio lote atual).
+
+    Estrategia:
+      1. Se nome ja livre, mantem.
+      2. Pede ao LLM outro nome ate 3 vezes (passando 'evitar' lista).
+      3. Se ainda conflita, adiciona sufixo No2, No3, ... ate achar livre.
+
+    Modifica produtos_brutos in-place (atualiza nome_curto_ai e nome_display_ai).
+    """
+    try:
+        import traduzir_nome as _trad
+    except ImportError:
+        return  # sem tradutor, ignora
+
+    skus_existentes = _carregar_skus_existentes()
+    nomes_no_lote: dict[str, str] = {}  # nome_curto -> display (intra-lote)
+
+    def conflita(nome_curto: str, nome_display: str) -> bool:
+        if not nome_curto:
+            return False
+        # Conflito intra-lote: SEMPRE que nome_curto ja foi usado.
+        # (mesmo display nao garante mesmo produto - sao anuncios distintos)
+        if nome_curto in nomes_no_lote:
+            return True
+        # Conflito com SKUs ja cadastrados em skus_em_uso.json
+        if nome_curto in skus_existentes:
+            return True
+        return False
+
+    for produto in produtos_brutos:
+        nome_curto = (produto.get("nome_curto_ai") or "").strip()
+        nome_display = (produto.get("nome_display_ai") or "").strip()
+        titulo = produto.get("titulo", "")
+
+        if not nome_curto:
+            continue  # sem nome da IA, fallback (gerar_nome_arte) cuidara depois
+
+        # 1. Sem conflito? Otimo.
+        if not conflita(nome_curto, nome_display):
+            nomes_no_lote[nome_curto] = nome_display
+            continue
+
+        nome_original = nome_curto
+        evitar = [nome_curto]
+
+        # 2. Tenta 3 vezes pedir outro nome ao LLM
+        for tentativa in range(1, 4):
+            resultado_alt = _trad.traduzir_para_pt(
+                titulo, tema_loja=tema_loja, evitar=evitar,
+            )
+            curto_alt = resultado_alt["curto"]
+            display_alt = resultado_alt["display"]
+            # tipo nao muda aqui - foi definido no loop principal anterior
+            if not curto_alt:
+                print(f"[SKU] Tentativa {tentativa} (LLM): falhou", file=sys.stderr)
+                break
+            print(
+                f"[SKU] Tentativa {tentativa} (LLM): "
+                f"'{nome_curto}' -> '{curto_alt}'",
+                file=sys.stderr,
+            )
+            if not conflita(curto_alt, display_alt):
+                nome_curto = curto_alt
+                nome_display = display_alt
+                break
+            evitar.append(curto_alt)
+
+        # 3. Se ainda conflita, adicionar sufixo NoN ate achar livre
+        if conflita(nome_curto, nome_display):
+            base_curto = nome_curto[:22]  # cap pra deixar espaco pro sufixo
+            base_display = nome_display
+            for n in range(2, 100):
+                cand_curto = f"{base_curto}No{n}"
+                cand_display = f"{base_display} No{n}"
+                if not conflita(cand_curto, cand_display):
+                    nome_curto = cand_curto
+                    nome_display = cand_display
+                    print(f"[SKU] Sufixo aplicado: '{nome_original}' -> '{nome_curto}'", file=sys.stderr)
+                    break
+            else:
+                # Nao encontrou em 100 tentativas (extremamente improvavel)
+                avisos.append(
+                    f"Conflito persistente no SKU para titulo '{titulo[:40]}'. "
+                    f"Edite skus_em_uso.json manualmente."
+                )
+
+        if nome_curto != nome_original:
+            avisos.append(
+                f"Nome original '{nome_original}' ja em uso. Renomeado para '{nome_curto}'."
+            )
+
+        produto["nome_curto_ai"] = nome_curto
+        produto["nome_display_ai"] = nome_display
+        nomes_no_lote[nome_curto] = nome_display
 
 
 def processar(
@@ -79,14 +207,18 @@ def processar(
     if loja not in CONFIG["lojas"]:
         raise ProcessamentoError(f"Loja '{loja}' invalida. Use: {', '.join(CONFIG['lojas'].keys())}")
 
-    # Validar ETSY_API_KEY apenas no modo que usa a API
+    tema_loja = CONFIG["lojas"][loja].get("tema_loja", "")
+
+    # No modo 'links' precisamos de pelo menos um fetcher (Firecrawl OU Etsy API)
+    fetcher = None
     if modo == "links":
-        etsy_key = os.environ.get("ETSY_API_KEY", "")
-        if not etsy_key:
+        fetcher = _get_etsy_fetcher()
+        if fetcher is None:
             raise ProcessamentoError(
-                "ETSY_API_KEY nao configurada. "
-                "Enquanto a chave nao for aprovada, use o modo 'Links + Imagens'."
+                "Modo 'So Links' requer FIRECRAWL_API_KEY (recomendado) ou ETSY_API_KEY no .env. "
+                "Crie uma chave gratuita em https://www.firecrawl.dev/ ou use o modo 'Links + Imagens'."
             )
+        print(f"[INFO] Usando fetcher: {fetcher.__name__}", file=sys.stderr)
 
     # Validar IMGBB_API_KEY (necessario em ambos os modos)
     imgbb_key = os.environ.get("IMGBB_API_KEY", "")
@@ -119,23 +251,79 @@ def processar(
     produtos_brutos = []
 
     if modo == "links":
-        # Busca titulo E imagens via API Etsy
-        for i, item in enumerate(dados):
-            pct = 10 + int((i / total) * 35)
-            progresso(f"Buscando dados do Etsy ({i + 1}/{total})...", pct)
-            try:
-                resultados = _fetch_etsy.processar_listings([item["url"]])
-                if resultados:
-                    r = resultados[0]
-                    produtos_brutos.append({
-                        "url":    item["url"],
-                        "titulo": r.get("titulo", ""),
-                        "imagens": r.get("imagens", []),
-                    })
-                else:
-                    avisos.append(f"Sem dados da API: {item['url']}")
-            except Exception as e:
-                avisos.append(f"Erro ao buscar {item['url']}: {e}")
+        # Busca titulo + imagens em lote (paralelizado quando o fetcher suporta)
+        progresso(f"Buscando dados do Etsy de {total} produtos...", 15)
+        urls = [item["url"] for item in dados]
+        try:
+            resultados = fetcher.processar_listings(urls)
+        except Exception as e:
+            raise ProcessamentoError(f"Erro ao buscar dados na Etsy: {e}")
+
+        # Mapear quantidade_manual de volta por URL (parse_entrada le mas fetcher nao propaga)
+        quantidades_por_url = {item["url"]: item for item in dados}
+
+        for r in resultados:
+            url = r.get("url", "")
+            if r.get("_falhou"):
+                avisos.append(
+                    f"Falha no scrape de {url} - preencha imagens manualmente "
+                    f"ou use o modo 'Links + Imagens' para esse produto"
+                )
+                continue
+            entrada = quantidades_por_url.get(url, {})
+            produtos_brutos.append({
+                "url":               url,
+                "titulo":            r.get("titulo", ""),
+                "imagens":           r.get("imagens", []),
+                "nome_curto_ai":     "",  # preenchido na Etapa 2.6 (traducao)
+                "nome_display_ai":   "",
+                "tipo_ai":           "",  # preenchido na Etapa 2.6 (LLM)
+                "quantidade_manual": entrada.get("quantidade_manual"),
+                "quantidade_raw":    entrada.get("quantidade_raw", ""),
+            })
+
+        if not produtos_brutos:
+            raise ProcessamentoError(
+                "Nenhum produto extraido com sucesso. Veja os avisos abaixo ou use o modo 'Links + Imagens'.",
+                avisos=avisos,
+            )
+
+        # ── Etapa 2.5: Filtrar imagens sem quadro (Gemini Flash) ──────────
+        if os.environ.get("GEMINI_API_KEY"):
+            progresso("Validando imagens (filtro de quadros)...", 40)
+            import frame_detection as _fd
+            metodo = os.environ.get("FRAME_DETECTION_METHOD", "gemini")
+            print(f"[INFO] Filtro de quadros ativo (metodo={metodo})", file=sys.stderr)
+
+            for produto in produtos_brutos:
+                imgs_originais = produto["imagens"]
+                imgs_validas = []
+                frame_count_capa = 0  # numero de quadros na 1a imagem valida
+                for img_url in imgs_originais:
+                    tem, n, motivo = _fd.tem_quadro(img_url, method=metodo)
+                    if tem:
+                        imgs_validas.append(img_url)
+                        # Capturar count da PRIMEIRA imagem valida (geralmente a capa)
+                        if frame_count_capa == 0 and n > 0:
+                            frame_count_capa = n
+                        print(f"  [FRAME OK] n={n} {motivo} -> {img_url[:80]}", file=sys.stderr)
+                        if len(imgs_validas) >= 4:
+                            break
+                    else:
+                        aviso = f"Imagem filtrada ({motivo}): {img_url}"
+                        avisos.append(aviso)
+                        print(f"  [FRAME FILTRADA] {motivo} -> {img_url[:80]}", file=sys.stderr)
+
+                # Se zerou tudo, pelo menos mantem a capa pra nao perder o produto
+                produto["imagens"] = imgs_validas[:4] or imgs_originais[:1]
+                produto["frame_count_capa"] = frame_count_capa
+                if not imgs_validas:
+                    avisos.append(
+                        f"Nenhuma imagem com quadro detectada em {produto['url']} - "
+                        f"usando capa original como fallback"
+                    )
+        else:
+            print("[INFO] Filtro de quadros DESATIVADO (GEMINI_API_KEY ausente)", file=sys.stderr)
 
     else:
         # Usa titulo do slug + imagens fornecidas na planilha
@@ -155,6 +343,11 @@ def processar(
                 "imagens": imagens,
                 # Imagens pre-selecionadas (a ordem e: capa, 1, 2, 3)
                 "imagens_prefornecidas": imagens,
+                "nome_curto_ai":     "",  # preenchido na Etapa 2.6 (traducao)
+                "nome_display_ai":   "",
+                "tipo_ai":           "",  # preenchido na Etapa 2.6 (LLM)
+                "quantidade_manual": item.get("quantidade_manual"),
+                "quantidade_raw":    item.get("quantidade_raw", ""),
             })
 
     if not produtos_brutos:
@@ -163,6 +356,37 @@ def processar(
             "Verifique os links e tente novamente."
         )
 
+    # ── Etapa 2.6: Traducao EN->PT + tipo (GPT-4o-mini, ~1s por produto) ──
+    # Roda em AMBOS os modos. Resolve titulos em ingles ou truncados pelo
+    # filtro de SEO words da gerar_nome_arte. LLM tambem retorna o tipo
+    # (Q1/KITN), substituindo determinar_tipo() quando bem-sucedido.
+    if os.environ.get("OPENAI_API_KEY"):
+        progresso("Traduzindo titulos para portugues...", 38)
+        import traduzir_nome as _trad
+        for p in produtos_brutos:
+            resultado = _trad.traduzir_para_pt(p["titulo"], tema_loja=tema_loja)
+            p["nome_display_ai"] = resultado["display"]
+            p["nome_curto_ai"] = resultado["curto"]
+            p["tipo_ai"] = resultado["tipo"]
+            if resultado["curto"]:
+                print(
+                    f"[TRAD] '{p['titulo'][:40]}...' -> "
+                    f"display='{resultado['display']}', "
+                    f"curto='{resultado['curto']}', "
+                    f"tipo='{resultado['tipo']}'",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    f"[TRAD] falhou para '{p['titulo'][:40]}...' - "
+                    f"usara fallback gerar_nome_arte",
+                    file=sys.stderr,
+                )
+
+        # ── Etapa 2.7: Resolver conflitos de SKU (3 retries LLM + sufixo NoN) ──
+        progresso("Resolvendo conflitos de SKU...", 42)
+        _resolver_conflitos_sku(produtos_brutos, avisos, tema_loja=tema_loja)
+
     # ── Etapa 3: Gerar nomes (PascalCase) e titulos SEO ──────────────────
     progresso("Gerando nomes e titulos SEO...", 50)
     produtos_processados = []
@@ -170,11 +394,75 @@ def processar(
     for item in produtos_brutos:
         titulo = item["titulo"]
         n_imagens = len(item["imagens"])
+        frame_count_capa = item.get("frame_count_capa", 0)
 
-        nome_sku, nome_display, tipo = gerar_nome_arte(titulo, n_imagens)
+        # Sempre roda gerar_nome_arte como fallback de nome (mesmo com tipo overrided)
+        nome_sku_default, nome_display_default, tipo_default = gerar_nome_arte(
+            titulo, n_imagens, frame_count_capa=frame_count_capa,
+        )
+
+        nome_curto_ai = (item.get("nome_curto_ai") or "").strip()
+        nome_display_ai = (item.get("nome_display_ai") or "").strip()
+        tipo_ai = (item.get("tipo_ai") or "").strip()
+        quantidade_manual = item.get("quantidade_manual")
+        quantidade_raw = (item.get("quantidade_raw") or "").strip()
+
+        # Determinar tipo com prioridade:
+        # 1) Quantidade manual da planilha (sempre vence)
+        # 2) Tipo retornado pelo LLM
+        # 3) Tipo do detector determinar_tipo()
+        if quantidade_manual is not None:
+            tipo = "Q1" if quantidade_manual == 1 else f"KIT{quantidade_manual}"
+            print(
+                f"[INFO] Quantidade manual da planilha: {quantidade_manual} -> Tipo='{tipo}'",
+                file=sys.stderr,
+            )
+        elif tipo_ai:
+            tipo = tipo_ai
+        else:
+            tipo = tipo_default
+
+        # Aviso se operador colocou valor invalido (raw nao vazio mas manual=None)
+        if quantidade_raw and quantidade_manual is None:
+            aviso = (
+                f"Quantidade '{quantidade_raw}' invalida na planilha "
+                f"(produto '{titulo[:40]}'). Use 1-9 ou deixe vazio. "
+                f"Caindo pra detecção automatica."
+            )
+            avisos.append(aviso)
+            print(f"[AVISO] {aviso}", file=sys.stderr)
+
+        # Resto da logica de nome (independente da fonte do tipo)
+        if nome_curto_ai and len(nome_curto_ai) <= 30:
+            nome_sku = nome_curto_ai
+            nome_display = nome_display_ai or nome_curto_ai
+            print(
+                f"[INFO] Usando nome+tipo: SKU='{nome_sku}' "
+                f"Display='{nome_display}' Tipo='{tipo}'",
+                file=sys.stderr,
+            )
+        else:
+            nome_sku = nome_sku_default
+            nome_display = nome_display_default
+            if nome_curto_ai:
+                print(f"[INFO] Nome da IA descartado (>{30} chars): '{nome_curto_ai}'", file=sys.stderr)
+
+        # Cap rigido - SKU NUNCA passa de 30 caracteres (regra de negocio)
+        if len(nome_sku) > 30:
+            print(f"[AVISO] Truncando SKU de {len(nome_sku)} para 30 chars: '{nome_sku}'", file=sys.stderr)
+            nome_sku = nome_sku[:30]
 
         if not nome_sku:
-            avisos.append(f"Nao foi possivel gerar nome para: {titulo[:60]}")
+            titulo_preview = titulo[:80] if titulo else "(titulo vazio)"
+            url_preview = item.get('url', '')[:60]
+            aviso_msg = (
+                f"Nao foi possivel gerar nome para titulo='{titulo_preview}' "
+                f"(url={url_preview}, {n_imagens} imagens). "
+                f"Edite o titulo no Etsy ou use modo 'Links + Imagens'."
+            )
+            avisos.append(aviso_msg)
+            print(f"[AVISO][SEO] {aviso_msg}", file=sys.stderr)
+            print(f"[DEBUG][SEO] titulo bruto: {repr(titulo)}", file=sys.stderr)
             continue
 
         titulo_shopee = gerar_titulo_seo(loja, nome_display, tipo, titulo, CONFIG)
@@ -188,7 +476,10 @@ def processar(
         })
 
     if not produtos_processados:
-        raise ProcessamentoError("Nenhum produto valido apos processar os titulos.")
+        raise ProcessamentoError(
+            "Nenhum produto valido apos processar os titulos. Veja os avisos abaixo.",
+            avisos=avisos,
+        )
 
     # ── Etapa 4: Upload das imagens para ImgBB ────────────────────────────
     total_p = len(produtos_processados)
@@ -249,11 +540,21 @@ def processar(
     except Exception as e:
         raise ProcessamentoError(f"Erro ao gerar planilha ERP: {e}")
 
+    # ── Etapa 8: Gerar planilha Kakashi ───────────────────────────────────
+    progresso("Gerando planilha Kakashi...", 97)
+    kakashi_path = None
+    try:
+        kakashi_path, avisos_kakashi = _export_kakashi.gerar_kakashi(input_json, output_dir)
+        avisos.extend(avisos_kakashi)
+    except Exception as e:
+        avisos.append(f"Erro ao gerar planilha Kakashi: {e}")
+
     progresso("Concluido!", 100)
 
     return {
-        "shopee_path": shopee_path,
-        "erp_path":    erp_path,
-        "produtos":    len(produtos_processados),
-        "avisos":      avisos,
+        "shopee_path":  shopee_path,
+        "erp_path":     erp_path,
+        "kakashi_path": kakashi_path,
+        "produtos":     len(produtos_processados),
+        "avisos":       avisos,
     }

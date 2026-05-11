@@ -1,20 +1,23 @@
 """
 read_input.py — Le planilha de entrada com URLs de anuncios Etsy.
 
-Formato esperado da planilha (colunas):
-  A: URL do anuncio Etsy (obrigatorio)
-  B: URL imagem capa (opcional)
-  C: URL imagem 1    (opcional)
-  D: URL imagem 2    (opcional)
-  E: URL imagem 3    (opcional)
+Formato esperado (ATUALIZADO em 28/04/2026 — Fix v6):
+  A: QUANTIDADE de quadros no produto (1=Q1, 2-9=KITN, vazio=detecção automática)
+  B: URL do anuncio Etsy (obrigatorio)
+  C: URL imagem capa (opcional)
+  D: URL imagem 1    (opcional)
+  E: URL imagem 2    (opcional)
+  F: URL imagem 3    (opcional)
 
-Se as colunas B-E estiverem preenchidas, as imagens sao usadas diretamente
-(sem precisar da Etsy API). Caso contrario, o fluxo busca via API.
+Quando QUANTIDADE preenchido com valor valido (1-9), TEM PRIORIDADE sobre
+deteccao automatica do LLM e do determinar_tipo(). Valor invalido gera
+warning e cai pro LLM.
 
 Uso:
     python scripts/read_input.py planilhas_links_artes/links_artes_PPJ_090426.xlsx
 
-Saida: JSON para stdout com lista de objetos {url, img_capa, img1, img2, img3}.
+Saida: JSON para stdout com lista de objetos
+{url, img_capa, img1, img2, img3, quantidade_manual, quantidade_raw}.
 """
 import sys, json, re, os
 
@@ -62,21 +65,37 @@ def parse_entrada(filepath):
         if not linha:
             continue
 
-        # Detectar coluna com URL Etsy (pode estar em qualquer coluna)
-        etsy_url = ""
-        img_capa = ""
-        img1 = img2 = img3 = ""
+        # NOVO (Fix v6): Coluna A = QUANTIDADE (pode ser vazia, "1", "2"-"9", ou invalida)
+        col_a_quantidade = linha[0] if len(linha) > 0 else ""
+        # Coluna B = URL Etsy (era A antes do Fix v6)
+        col_b_url = linha[1] if len(linha) > 1 else ""
 
-        # Verificar se a linha tem formato estruturado (col A = etsy URL)
-        col_a = linha[0] if len(linha) > 0 else ""
-        if re.search(r'etsy\.com/(?:pt/)?listing/\d+', col_a):
-            etsy_url = limpar_url(col_a)
-            img_capa = limpar_url(linha[1]) if len(linha) > 1 else ""
-            img1     = limpar_url(linha[2]) if len(linha) > 2 else ""
-            img2     = limpar_url(linha[3]) if len(linha) > 3 else ""
-            img3     = limpar_url(linha[4]) if len(linha) > 4 else ""
+        # Quantidade manual: int valido entre 1 e 9, ou None
+        quantidade_manual = None
+        if col_a_quantidade:
+            try:
+                # Aceita "3", "3.0", " 3 " etc
+                q = int(float(col_a_quantidade))
+                if 1 <= q <= 9:
+                    quantidade_manual = q
+                # Se fora do range, fica None silenciosamente (warning sera dado em core.py)
+            except (ValueError, TypeError):
+                # Texto invalido, fica None silenciosamente
+                pass
+
+        # Detectar URL Etsy: aceita em col B (formato novo) OU varrer linha (compat)
+        etsy_url = ""
+        img_capa = img1 = img2 = img3 = ""
+
+        if re.search(r'etsy\.com/(?:pt/)?listing/\d+', col_b_url):
+            # Formato novo: A=quantidade, B=url, C-F=imagens
+            etsy_url = limpar_url(col_b_url)
+            img_capa = limpar_url(linha[2]) if len(linha) > 2 else ""
+            img1     = limpar_url(linha[3]) if len(linha) > 3 else ""
+            img2     = limpar_url(linha[4]) if len(linha) > 4 else ""
+            img3     = limpar_url(linha[5]) if len(linha) > 5 else ""
         else:
-            # Formato antigo: escanear todas as celulas por URL Etsy
+            # Fallback: escanear todas as celulas por URL Etsy (formato livre)
             for cell in linha:
                 if cell and re.search(r'etsy\.com/(?:pt/)?listing/\d+', cell):
                     etsy_url = limpar_url(cell)
@@ -87,11 +106,13 @@ def parse_entrada(filepath):
 
         seen_urls.add(etsy_url)
         resultados.append({
-            "url": etsy_url,
-            "img_capa": img_capa,
-            "img1": img1,
-            "img2": img2,
-            "img3": img3,
+            "url":               etsy_url,
+            "img_capa":          img_capa,
+            "img1":              img1,
+            "img2":              img2,
+            "img3":              img3,
+            "quantidade_manual": quantidade_manual,                # int 1-9 ou None
+            "quantidade_raw":    str(col_a_quantidade).strip(),    # para warning de invalido
         })
 
     return resultados
