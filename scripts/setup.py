@@ -4,7 +4,18 @@ Executar uma vez antes de usar o sistema.
 """
 import subprocess, sys, os
 
-DEPS = ["openpyxl", "xlrd", "requests", "python-dotenv"]
+DEPS = [
+    "openpyxl",
+    "xlrd",
+    "requests",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+    "opencv-python-headless",
+    "numpy",
+    "google-genai",
+]
 
 def install_deps():
     print("Instalando dependencias...")
@@ -29,6 +40,27 @@ def check_env():
         return False
 
     print("  OK: .env com IMGBB_API_KEY encontrado")
+
+    # Modo "So Links" precisa de Firecrawl OU Etsy API. Modo "Links + Imagens" nao precisa.
+    has_firecrawl = "FIRECRAWL_API_KEY=fc-" in content and "fc-..." not in content
+    has_etsy      = "ETSY_API_KEY=" in content and "keystring:shared_secret" not in content
+    if has_firecrawl:
+        print("  OK: FIRECRAWL_API_KEY configurada (modo 'So Links' habilitado)")
+    elif has_etsy:
+        print("  OK: ETSY_API_KEY configurada (modo 'So Links' usara Etsy Open API)")
+    else:
+        print("  [INFO] Sem FIRECRAWL_API_KEY nem ETSY_API_KEY - modo 'So Links' indisponivel.")
+        print("         Modo 'Links + Imagens' continua funcionando normalmente.")
+        print("         Para habilitar 'So Links', crie chave em: https://www.firecrawl.dev/")
+
+    has_gemini = "GEMINI_API_KEY=" in content and not content.split("GEMINI_API_KEY=")[1].startswith(("\n", "..."))
+    if has_gemini:
+        print("  OK: GEMINI_API_KEY configurada (filtro de imagens sem quadro ativo)")
+    else:
+        print("  [INFO] GEMINI_API_KEY ausente - filtro de imagens DESATIVADO.")
+        print("         Imagens de texto/video do anuncio Etsy podem aparecer na Shopee.")
+        print("         Para ativar, crie chave em: https://aistudio.google.com/apikey")
+
     return True
 
 def check_dirs():
@@ -63,7 +95,7 @@ def check_templates():
     return ok
 
 if __name__ == "__main__":
-    print("=== Setup: Agent_NewProductShopee ===\n")
+    print("=== Setup: Peter_Copy_Ads ===\n")
     install_deps()
     check_dirs()
     env_ok = check_env()

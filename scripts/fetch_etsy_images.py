@@ -93,17 +93,21 @@ def processar_listings(inputs: list[str]) -> list[dict]:
         imagens = get_listing_images(lid)
         time.sleep(DELAY)
 
+        falhou = not titulo or not imagens
         resultados.append({
             "listing_id": lid,
-            "titulo": titulo,
-            "imagens": imagens,
-            "url": inp if "etsy.com" in inp else f"https://www.etsy.com/listing/{lid}"
+            "titulo":     titulo,
+            "imagens":    imagens,
+            "url":        inp if "etsy.com" in inp else f"https://www.etsy.com/listing/{lid}",
+            "_falhou":    falhou,
         })
 
-        if titulo:
-            print(f"    OK: \"{titulo[:60]}\" — {len(imagens)} imagens", file=sys.stderr)
+        if falhou:
+            print(f"    FALHA: {lid} - sem titulo ({not titulo}) ou sem imagens ({not imagens}). API pode estar bloqueada.", file=sys.stderr)
+        elif titulo:
+            print(f"    OK: \"{titulo[:60]}\" - {len(imagens)} imagens", file=sys.stderr)
         else:
-            print(f"    OK: {lid} — {len(imagens)} imagens", file=sys.stderr)
+            print(f"    OK: {lid} - {len(imagens)} imagens", file=sys.stderr)
 
     return resultados
 
