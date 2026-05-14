@@ -91,15 +91,27 @@ def _titulo_do_slug(url: str) -> str:
 
 
 def _carregar_skus_existentes() -> dict:
-    """Carrega skus_em_uso.json. Retorna dict vazio se nao existir."""
-    skus_path = BASE_DIR / "skus_em_uso.json"
-    if not skus_path.exists():
-        return {}
-    try:
-        with open(skus_path, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    """Carrega skus_em_uso.json. Retorna dict vazio se nao existir.
+
+    Na Vercel, mergeia /var/task (do deploy, read-only — fonte historica) com
+    /tmp/skus_em_uso.json (escritas dessa lambda) — alinhado com a logica de
+    build_shopee_template.carregar_skus.
+    """
+    is_vercel = bool(os.environ.get("VERCEL"))
+    paths = [BASE_DIR / "skus_em_uso.json"]
+    if is_vercel:
+        paths.append(Path("/tmp/skus_em_uso.json"))
+
+    skus: dict = {}
+    for p in paths:
+        if not p.exists():
+            continue
+        try:
+            with open(p, encoding="utf-8") as f:
+                skus.update(json.load(f))
+        except Exception:
+            continue
+    return skus
 
 
 def _resolver_conflitos_sku(
