@@ -12,6 +12,7 @@ import json
 import time
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlparse, unquote
 
 # Caminho base do projeto
 BASE_DIR = Path(__file__).parent.parent
@@ -53,14 +54,40 @@ class ProcessamentoError(Exception):
         self.avisos = avisos or []
 
 
+def _slug_to_titulo(slug: str) -> str:
+    """Converte slug URL-safe em titulo legivel (decode %-encoding + spaces + capitalize)."""
+    slug = unquote(slug)
+    slug = re.sub(r'[-_]+', ' ', slug)
+    palavras = slug.split()
+    return ' '.join(w.capitalize() for w in palavras if w)
+
+
 def _titulo_do_slug(url: str) -> str:
-    """Extrai titulo aproximado do slug da URL Etsy (fallback sem API)."""
-    m = re.search(r'/listing/\d+/([^?/]+)', url)
-    if not m:
+    """Extrai titulo aproximado do slug da URL.
+
+    Suporta Etsy, Shopee BR/INTL, e fallback generico (ultimo segmento do path).
+    Usado no modo 'Links + Imagens' como base para a etapa de traducao LLM.
+    """
+    if not url:
         return ""
-    slug = m.group(1)
-    # "deus-e-bom-o-tempo-todo-arte-de-parede" → "Deus E Bom O Tempo Todo Arte De Parede"
-    return ' '.join(w.capitalize() for w in slug.replace('-', ' ').split())
+
+    # Etsy: /listing/{id}/{slug}
+    m = re.search(r'/listing/\d+/([^?/]+)', url)
+    if m:
+        return _slug_to_titulo(m.group(1))
+
+    # Shopee BR/INTL: /{slug}-i.{shopid}.{itemid}
+    m = re.search(r'/([^/?]+?)-i\.\d+\.\d+', url)
+    if m:
+        return _slug_to_titulo(m.group(1))
+
+    # Fallback generico: ultimo segmento nao-vazio do path
+    path = urlparse(url).path
+    segmentos = [s for s in path.split('/') if s]
+    if segmentos:
+        return _slug_to_titulo(segmentos[-1])
+
+    return ""
 
 
 def _carregar_skus_existentes() -> dict:
@@ -240,8 +267,9 @@ def processar(
 
     if not dados:
         raise ProcessamentoError(
-            "Nenhum link da Etsy encontrado na planilha. "
-            "Verifique se o arquivo contem URLs no formato etsy.com/listing/..."
+            "Nenhum link de anuncio encontrado na planilha. "
+            "Verifique se o arquivo contem URLs (ex: etsy.com/listing/..., "
+            "shopee.com.br/..., etc.)."
         )
 
     total = len(dados)
@@ -251,9 +279,20 @@ def processar(
     produtos_brutos = []
 
     if modo == "links":
+        # Gate: modo autonomo so suporta URLs Etsy (fetchers sao Etsy-especificos).
+        # Para Shopee/outros sites, operador deve usar modo 'Links + Imagens'.
+        urls = [item["url"] for item in dados]
+        nao_etsy = [u for u in urls if not re.search(r'etsy\.com/(?:pt/)?listing/\d+', u)]
+        if nao_etsy:
+            raise ProcessamentoError(
+                f"Modo 'So Links' suporta apenas URLs Etsy ({len(nao_etsy)} de "
+                f"{len(urls)} URLs sao de outros sites). Para Shopee/outros, use o "
+                f"modo 'Links + Imagens' fornecendo as imagens manualmente. "
+                f"URL incompativel (primeira): {nao_etsy[0][:80]}"
+            )
+
         # Busca titulo + imagens em lote (paralelizado quando o fetcher suporta)
         progresso(f"Buscando dados do Etsy de {total} produtos...", 15)
-        urls = [item["url"] for item in dados]
         try:
             resultados = fetcher.processar_listings(urls)
         except Exception as e:
