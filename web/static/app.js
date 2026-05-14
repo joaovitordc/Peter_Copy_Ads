@@ -387,11 +387,11 @@ function atualizarPainelPreview() {
   const isComImagens = state.modo === 'links_com_imagens';
 
   const headerCells = isComImagens
-    ? ['Qtd', 'Link Etsy', 'Img 1', 'Img 2', 'Img 3', 'Img 4']
+    ? ['Qtd', 'Link do anúncio', 'Img 1', 'Img 2', 'Img 3', 'Img 4']
     : ['Qtd', 'Link Etsy'];
 
   const sampleRow = isComImagens
-    ? ['1',  'etsy.com/...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...']
+    ? ['1',  'etsy.com/... ou shopee.com.br/...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...']
     : ['1',  'etsy.com/listing/...'];
 
   const cols = isComImagens

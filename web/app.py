@@ -238,7 +238,7 @@ async def modelo(tipo: str):
 
     if tipo == "links":
         ws.title = "Links Etsy"
-        headers = ["QUANTIDADE", "LINK DO SITE ETSY"]
+        headers = ["QUANTIDADE", "LINK DO ANÚNCIO"]
         ws.column_dimensions["A"].width = 14
         ws.column_dimensions["B"].width = 70
         # Linha de exemplo
@@ -249,7 +249,7 @@ async def modelo(tipo: str):
         filename = "modelo_links_etsy.xlsx"
     else:
         ws.title = "Links + Imagens"
-        headers = ["QUANTIDADE", "LINK DO SITE ETSY", "IMAGEM CAPA", "IMAGEM 1", "IMAGEM 2", "IMAGEM 3"]
+        headers = ["QUANTIDADE", "LINK DO ANÚNCIO", "IMAGEM CAPA", "IMAGEM 1", "IMAGEM 2", "IMAGEM 3"]
         ws.column_dimensions["A"].width = 14
         ws.column_dimensions["B"].width = 60
         for col in ["C", "D", "E", "F"]:
