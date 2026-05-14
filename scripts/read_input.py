@@ -1,13 +1,16 @@
 """
-read_input.py — Le planilha de entrada com URLs de anuncios Etsy.
+read_input.py — Le planilha de entrada com URLs de anuncios (qualquer site).
 
-Formato esperado (ATUALIZADO em 28/04/2026 — Fix v6):
+Formato esperado:
   A: QUANTIDADE de quadros no produto (1=Q1, 2-9=KITN, vazio=detecção automática)
-  B: URL do anuncio Etsy (obrigatorio)
+  B: URL do anuncio (obrigatorio) — Etsy, Shopee, ou qualquer site (https?://)
   C: URL imagem capa (opcional)
   D: URL imagem 1    (opcional)
   E: URL imagem 2    (opcional)
   F: URL imagem 3    (opcional)
+
+Detecção de URL é por `https?://` (universal). Antes (pre-30/04/2026) era
+restrito a `etsy.com/listing/...`.
 
 Quando QUANTIDADE preenchido com valor valido (1-9), TEM PRIORIDADE sobre
 deteccao automatica do LLM e do determinar_tipo(). Valor invalido gera
@@ -20,6 +23,14 @@ Saida: JSON para stdout com lista de objetos
 {url, img_capa, img1, img2, img3, quantidade_manual, quantidade_raw}.
 """
 import sys, json, re, os
+
+
+_URL_RE = re.compile(r'^https?://', re.IGNORECASE)
+
+
+def _eh_url(s) -> bool:
+    """Verifica se s e uma URL bem-formada (qualquer site)."""
+    return bool(s) and bool(_URL_RE.match(str(s).strip()))
 
 
 def limpar_url(u):
@@ -83,30 +94,30 @@ def parse_entrada(filepath):
                 # Texto invalido, fica None silenciosamente
                 pass
 
-        # Detectar URL Etsy: aceita em col B (formato novo) OU varrer linha (compat)
-        etsy_url = ""
+        # Detectar URL: aceita em col B (formato novo) OU varrer linha (compat)
+        url = ""
         img_capa = img1 = img2 = img3 = ""
 
-        if re.search(r'etsy\.com/(?:pt/)?listing/\d+', col_b_url):
+        if _eh_url(col_b_url):
             # Formato novo: A=quantidade, B=url, C-F=imagens
-            etsy_url = limpar_url(col_b_url)
+            url = limpar_url(col_b_url)
             img_capa = limpar_url(linha[2]) if len(linha) > 2 else ""
             img1     = limpar_url(linha[3]) if len(linha) > 3 else ""
             img2     = limpar_url(linha[4]) if len(linha) > 4 else ""
             img3     = limpar_url(linha[5]) if len(linha) > 5 else ""
         else:
-            # Fallback: escanear todas as celulas por URL Etsy (formato livre)
+            # Fallback: escanear todas as celulas por URL (formato livre)
             for cell in linha:
-                if cell and re.search(r'etsy\.com/(?:pt/)?listing/\d+', cell):
-                    etsy_url = limpar_url(cell)
+                if _eh_url(cell):
+                    url = limpar_url(cell)
                     break
 
-        if not etsy_url or etsy_url in seen_urls:
+        if not url or url in seen_urls:
             continue
 
-        seen_urls.add(etsy_url)
+        seen_urls.add(url)
         resultados.append({
-            "url":               etsy_url,
+            "url":               url,
             "img_capa":          img_capa,
             "img1":              img1,
             "img2":              img2,
