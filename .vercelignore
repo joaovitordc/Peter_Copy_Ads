@@ -14,8 +14,12 @@ web/jobs/
 # Documentacao interna
 .claude/
 
-# Templates de referencia (scripts constroem do zero, nao usam estes arquivos)
-planilhas_padrao/
+# planilhas_padrao/ NAO deve ser ignorado — desde Fix v7 (28/04/2026)
+# scripts/build_shopee_template.py e scripts/export_kakashi.py leem
+# os templates Shopee oficial e Kakashi diretamente do disco via
+# shutil.copy2(TEMPLATE_PATH, ...). build_erp_template ainda constroi do
+# zero, mas os outros 2 dependem dos .xlsx aqui. Tambem precisa estar
+# em vercel.json -> builds[].config.includeFiles.
 
 # Python
 __pycache__/
