@@ -2,7 +2,7 @@
 read_input.py — Le planilha de entrada com URLs de anuncios (qualquer site).
 
 Formato esperado:
-  A: QUANTIDADE de quadros no produto (1=Q1, 2-9=KITN, vazio=detecção automática)
+  A: QUANTIDADE de quadros no produto (1=Q1, 2=KIT2, 3=KIT3, vazio=detecção automática)
   B: URL do anuncio (obrigatorio) — Etsy, Shopee, ou qualquer site (https?://)
   C: URL imagem capa (opcional)
   D: URL imagem 1    (opcional)
@@ -12,9 +12,13 @@ Formato esperado:
 Detecção de URL é por `https?://` (universal). Antes (pre-30/04/2026) era
 restrito a `etsy.com/listing/...`.
 
-Quando QUANTIDADE preenchido com valor valido (1-9), TEM PRIORIDADE sobre
-deteccao automatica do LLM e do determinar_tipo(). Valor invalido gera
-warning e cai pro LLM.
+Quando QUANTIDADE preenchido com valor valido (1, 2 ou 3), TEM PRIORIDADE
+sobre deteccao automatica do LLM e do determinar_tipo(). Valor invalido
+(fora de 1-3, texto, decimal nao-inteiro) gera warning e cai pro LLM.
+
+Tipos suportados desde 2026-05-16: Q1 (1 quadro), KIT2, KIT3 apenas.
+KIT4-9 foram removidos junto com a migracao pra estrategia 25% off via
+tabela inflada (so existe tabela canonica validada pra esses 3 tipos).
 
 Uso:
     python scripts/read_input.py planilhas_links_artes/links_artes_PPJ_090426.xlsx
@@ -81,15 +85,16 @@ def parse_entrada(filepath):
         # Coluna B = URL Etsy (era A antes do Fix v6)
         col_b_url = linha[1] if len(linha) > 1 else ""
 
-        # Quantidade manual: int valido entre 1 e 9, ou None
+        # Quantidade manual: int valido entre 1 e 3, ou None
         quantidade_manual = None
         if col_a_quantidade:
             try:
                 # Aceita "3", "3.0", " 3 " etc
                 q = int(float(col_a_quantidade))
-                if 1 <= q <= 9:
+                if 1 <= q <= 3:
                     quantidade_manual = q
-                # Se fora do range, fica None silenciosamente (warning sera dado em core.py)
+                # Se fora do range (4-9, 0, negativo), fica None silenciosamente
+                # (warning sera dado em core.py)
             except (ValueError, TypeError):
                 # Texto invalido, fica None silenciosamente
                 pass

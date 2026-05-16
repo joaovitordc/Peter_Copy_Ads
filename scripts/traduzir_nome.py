@@ -45,7 +45,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 
 # Tipos validos suportados pelo sistema (do config.json)
-TIPOS_VALIDOS = ["Q1", "KIT2", "KIT3", "KIT4", "KIT5", "KIT6", "KIT7", "KIT8", "KIT9"]
+TIPOS_VALIDOS = ["Q1", "KIT2", "KIT3"]
 
 # Preposicoes/conjuncoes/artigos que nao devem terminar um SKU
 SUFIXOS_INVALIDOS = {
@@ -163,14 +163,13 @@ nouns. Inventing a thematic name is REQUIRED, not optional.
 
 ═══ Type detection rules ═══
 
+Only three types are supported: Q1 (single piece), KIT2 (set of 2), KIT3 (set of 3).
+
 - "Set of 2", "diptych", "duo", "Conjunto de 2", "2 quadros" → KIT2
 - "Set of 3", "trio", "Conjunto de 3", "3 prints", "3 quadros" → KIT3
-- "Set of 4", "Conjunto de 4", "4 prints", "4 quadros" → KIT4
-- "Set of 5", "Conjunto de 5", "5 prints", "5 quadros" → KIT5
-- "Set of 6", "Conjunto de 6", "6 prints", "6 quadros" → KIT6
-- "Set of 7", "Conjunto de 7", "7 prints", "7 quadros" → KIT7
-- "Set of 8", "Conjunto de 8", "8 prints", "8 quadros" → KIT8
-- "Set of 9", "Conjunto de 9", "9 prints", "9 quadros" → KIT9
+- "Set of 4", "Set of 5", "Set of 6", "Set of 7", "Set of 8", "Set of 9" (or PT equivalents)
+  → **return Q1** (these larger kit types are NOT supported; operator will handle manually).
+  Do NOT return KIT4/5/6/7/8/9.
 - Otherwise → Q1
 
 ═══ Examples (with shop theme) ═══

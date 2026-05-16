@@ -51,12 +51,6 @@ TIPO_NOME = {
     "Q1":   "Quadro",
     "KIT2": "Kit 2 Quadros",
     "KIT3": "Kit 3 Quadros",
-    "KIT4": "Kit 4 Quadros",
-    "KIT5": "Kit 5 Quadros",
-    "KIT6": "Kit 6 Quadros",
-    "KIT7": "Kit 7 Quadros",
-    "KIT8": "Kit 8 Quadros",
-    "KIT9": "Kit 9 Quadros",
 }
 
 

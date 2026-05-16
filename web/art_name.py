@@ -172,8 +172,10 @@ def determinar_tipo(n_imagens: int, titulo: str, frame_count_capa: int = 0) -> s
     """
     titulo_lower = titulo.lower()
 
-    # 1. Padrao numerico
-    for n in [9, 8, 7, 6, 5, 4, 3, 2]:
+    # 1. Padrao numerico — apenas KIT2 e KIT3 sao tipos suportados (2026-05-16).
+    # Titulos mencionando 4-9 quadros caem em Q1 (fallback) com warning, igual
+    # ao SYSTEM_PROMPT do LLM em traduzir_nome.py.
+    for n in [3, 2]:
         patterns = [
             # Padroes em ingles
             f"kit {n}",
@@ -222,11 +224,12 @@ def determinar_tipo(n_imagens: int, titulo: str, frame_count_capa: int = 0) -> s
         if re.search(rf'\b{re.escape(palavra)}\b', titulo_lower):
             return tipo
 
-    # 3. Frame count da capa como tiebreaker
+    # 3. Frame count da capa como tiebreaker — só mapeia pra KIT2 ou KIT3
+    # (tipos suportados desde 2026-05-16). Capa com 4+ quadros vira KIT3
+    # como aproximacao; operador pode trocar via coluna QUANTIDADE manual.
     if frame_count_capa >= 2:
-        n = min(frame_count_capa, 9)
-        # Mapear para tipos validos (KIT2 a KIT9, todos suportados)
-        validos = [2, 3, 4, 5, 6, 7, 8, 9]
+        n = min(frame_count_capa, 3)
+        validos = [2, 3]
         n_proximo = min(validos, key=lambda v: abs(v - n))
         return f"KIT{n_proximo}"
 

@@ -477,7 +477,7 @@ def processar(
         if quantidade_raw and quantidade_manual is None:
             aviso = (
                 f"Quantidade '{quantidade_raw}' invalida na planilha "
-                f"(produto '{titulo[:40]}'). Use 1-9 ou deixe vazio. "
+                f"(produto '{titulo[:40]}'). Use 1, 2 ou 3 ou deixe vazio. "
                 f"Caindo pra detecção automatica."
             )
             avisos.append(aviso)
