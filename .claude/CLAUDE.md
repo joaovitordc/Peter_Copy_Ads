@@ -257,6 +257,41 @@ Sistema agora suporta **4 lojas**: PPJ, iPaper, AllQuadros e **DecorKids**.
 do AllQuadros. Operador deve fornecer 5 URLs ImgBB próprias do tema infantil
 e atualizar `config.json`.
 
+### Estratégia "régua 25% off via tabela inflada" (16/05/2026)
+
+Validada empiricamente em 15/05/2026 (produto "Deus No Comando", iPaper).
+Substitui o modelo anterior de "preço-alvo direto" — agora Peter cadastra
+com **tabela inflada** + operador ativa **Promoção do Vendedor 25%** contínua
+na Shopee. Resultado: card com riscado preto + tag verde "-25%", margem
+20-25% preservada, sem disparar flag de "desconto enganoso" (Lei 14.532/2023).
+
+**Fórmula:** `inflado = floor(alvo / 0.75 × 100) / 100`. A Shopee aplica
+CEILING (centavos) ao calcular `inflado × 0.75`, resultando exatamente no
+preço-alvo. Valores hardcoded em `config.json` (chaves `precos` e
+`precos_alvo` em paralelo) — não recalculados em runtime pra evitar bugs de
+float.
+
+**Tipos suportados:** apenas Q1, KIT2, KIT3 (alinhado com 12 SKUs canônicos
+validados). KIT4-9 (do Fix v6) **removidos**. Se o LLM/operador tentar
+detectar `KIT4`+, cai pra Q1 com warning — operador resolve manualmente.
+
+**Fluxo 2-etapas (operador):**
+1. Peter run 1 → planilha de cadastro Shopee (preço da col "Preço" = inflado)
+2. Operador sobe na Shopee Seller Center, aguarda processamento
+3. Operador exporta `mass_update_sales_info` da Shopee (Meus Produtos →
+   Ações → Exportar)
+4. Peter run 2 (card "Gerar Planilha de Desconto" no frontend) → upload do
+   arquivo → POST `/api/desconto` → baixa `discount_25off_<data>.xlsx`
+5. Operador sobe `discount_25off_*.xlsx` na Shopee (Promoções → Promoção
+   do Vendedor → Importar)
+
+**Implementação:** `scripts/build_discount_template.py` parseia SKU
+(`{TIPO}_{TAM}{MOL}_{NOME}` ex: `Q1_4060MM_Salmo4610`), faz lookup em
+`CONFIG["precos"]` e `CONFIG["precos_alvo"]`, gera XLSX com 9 colunas
+(formato template-discount oficial Shopee). Endpoint em `web/app.py`
+`/api/desconto`. Frontend: card secundário em `index.html` + handler em
+`app.js`.
+
 ## Filtro de imagens (modo "So Links")
 
 Anuncios Etsy frequentemente tem imagens que NAO sao do quadro (cards de texto
