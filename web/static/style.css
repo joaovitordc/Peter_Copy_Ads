@@ -885,3 +885,52 @@ body::before {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Card de Desconto (fluxo 2-etapas: Promoção do Vendedor 25%) ────────── */
+.desconto-card .desconto-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+.desconto-card .desconto-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.desconto-card .desconto-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.desconto-card .desconto-desc code {
+  background: var(--surface-subtle);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.desconto-card .desconto-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.desconto-card .desconto-filename {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: ui-monospace, monospace;
+}
+.desconto-card .desconto-status {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.desconto-card .desconto-status.success {
+  color: var(--success, #16a34a);
+}
+.desconto-card .desconto-status.error {
+  color: var(--danger);
+}

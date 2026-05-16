@@ -293,6 +293,37 @@
           </button>
         </div>
 
+        <!-- ── Gerar Planilha de Desconto (fluxo separado, sempre visível) ── -->
+        <div class="glass-card desconto-card" id="desconto-section" style="margin-top: 1.5rem">
+          <div class="desconto-header">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 14l6-6M9 9h.01M15 14h.01M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h2 class="desconto-title">Gerar Planilha de Desconto 25% off</h2>
+          </div>
+          <p class="desconto-desc">
+            Após cadastrar produtos na Shopee, baixe o arquivo
+            <code>mass_update_sales_info</code> na Seller Center
+            (Meus Produtos → Ações → Exportar) e suba aqui pra gerar a
+            planilha de <strong>Promoção do Vendedor 25%</strong>.
+          </p>
+
+          <input type="file" id="desconto-file-input" accept=".xlsx" hidden>
+          <div class="desconto-controls">
+            <button type="button" class="btn-secondary" id="desconto-file-btn">
+              Escolher arquivo .xlsx
+            </button>
+            <span class="desconto-filename" id="desconto-filename"></span>
+          </div>
+
+          <button type="button" class="btn-primary" id="btn-desconto" disabled>
+            Gerar Desconto
+          </button>
+
+          <p class="desconto-status" id="desconto-status" style="display:none" role="status"></p>
+        </div>
+
       </main>
 
       <!-- ── Coluna direita: painel informativo ── -->

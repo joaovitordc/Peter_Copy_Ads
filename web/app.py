@@ -34,6 +34,7 @@ BASE_DIR = Path(__file__).parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR / "scripts"))  # pra importar build_discount_template etc direto
 
 CONFIG_PATH = BASE_DIR / "config.json"
 with open(CONFIG_PATH, encoding="utf-8") as f:
@@ -278,8 +279,9 @@ async def modelo(tipo: str):
     # Tooltip explicando os valores aceitos na coluna QUANTIDADE
     quantidade_comment = Comment(
         "Coluna QUANTIDADE:\n"
-        "  1     = Solo (Q1)\n"
-        "  2 a 9 = Kit (KIT2 a KIT9)\n"
+        "  1 = Solo (Q1)\n"
+        "  2 = Kit 2 quadros (KIT2)\n"
+        "  3 = Kit 3 quadros (KIT3)\n"
         "  Vazio = Detecção automática pelo LLM",
         "Peter",
     )
@@ -295,6 +297,58 @@ async def modelo(tipo: str):
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/api/desconto")
+async def desconto(arquivo: UploadFile = File(...)):
+    """
+    Recebe um mass_update_sales_info.xlsx exportado da Shopee Seller Center
+    e devolve o template-discount.xlsx preenchido com (Preço original, Preço
+    de desconto) baseados na tabela canônica do config.json (Q1/KIT2/KIT3).
+
+    Operação síncrona — sem job system. Retorno direto pra download.
+    """
+    ext = Path(arquivo.filename or "").suffix.lower()
+    if ext not in (".xlsx",):
+        raise HTTPException(400, detail=f"Formato inválido '{ext}'. Use .xlsx exportado pela Shopee.")
+
+    # Salvar upload em /tmp pra ler com openpyxl
+    tmp_dir = JOBS_DIR / f"desconto_{uuid.uuid4()}"
+    tmp_dir.mkdir()
+    input_path = tmp_dir / arquivo.filename
+    conteudo = await arquivo.read()
+    with open(input_path, "wb") as f:
+        f.write(conteudo)
+
+    try:
+        import build_discount_template as _bd
+        caminho, avisos = _bd.gerar_discount(str(input_path), str(tmp_dir))
+    except Exception as e:
+        # cleanup parcial e bubble up
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise HTTPException(400, detail=f"Erro ao gerar planilha de desconto: {e}")
+
+    # Stream da resposta a partir de buffer (pra poder limpar o tmp_dir depois)
+    with open(caminho, "rb") as f:
+        buf = io.BytesIO(f.read())
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    buf.seek(0)
+
+    # X-Avisos: warnings agregados (SKUs sem lookup) — frontend pode mostrar
+    avisos_header = "|".join(avisos[:5])  # limitar tamanho do header
+    if len(avisos) > 5:
+        avisos_header += f"|... e mais {len(avisos) - 5}"
+
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{Path(caminho).name}"',
+            "X-Avisos": avisos_header[:2000],
+            "X-Avisos-Count": str(len(avisos)),
+            "Access-Control-Expose-Headers": "X-Avisos, X-Avisos-Count, Content-Disposition",
+        },
     )
 
 

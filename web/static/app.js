@@ -39,6 +39,14 @@ const btnNovaPlanilha   = $('btn-nova-planilha');
 const errorMsg           = $('error-msg');
 const btnTentarNovamente = $('btn-tentar-novamente');
 
+// Card secundário "Gerar Planilha de Desconto" (fluxo 2-etapas)
+const descontoFileInput  = $('desconto-file-input');
+const descontoFileBtn    = $('desconto-file-btn');
+const descontoFilename   = $('desconto-filename');
+const btnDesconto        = $('btn-desconto');
+const descontoStatus     = $('desconto-status');
+const descontoState      = { arquivo: null };
+
 /* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   inicializarTema();
@@ -46,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarModos();
   configurarDropzone();
   configurarBotoes();
+  configurarDesconto();
   atualizarPainelPreview();
   atualizarPainelTips();
   atualizarPainelStatus();
@@ -444,4 +453,94 @@ function atualizarPainelTips() {
       <span>${t}</span>
     </li>
   `).join('');
+}
+
+/* ── Card de Desconto (fluxo 2-etapas independente) ─────────────────────── */
+function configurarDesconto() {
+  if (!btnDesconto || !descontoFileInput) return;  // card pode nao existir em telas antigas
+
+  descontoFileBtn?.addEventListener('click', () => descontoFileInput.click());
+
+  descontoFileInput.addEventListener('change', () => {
+    const f = descontoFileInput.files[0];
+    if (!f) return;
+    if (!f.name.toLowerCase().endsWith('.xlsx')) {
+      mostrarStatusDesconto('Arquivo deve ser .xlsx (exportado da Shopee Seller Center)', 'error');
+      descontoState.arquivo = null;
+      btnDesconto.disabled = true;
+      descontoFilename.textContent = '';
+      return;
+    }
+    descontoState.arquivo = f;
+    descontoFilename.textContent = f.name;
+    btnDesconto.disabled = false;
+    mostrarStatusDesconto('', null);
+  });
+
+  btnDesconto.addEventListener('click', gerarDesconto);
+}
+
+async function gerarDesconto() {
+  if (!descontoState.arquivo) return;
+
+  const fd = new FormData();
+  fd.append('arquivo', descontoState.arquivo);
+
+  btnDesconto.disabled = true;
+  const labelOriginal = btnDesconto.textContent;
+  btnDesconto.textContent = 'Gerando...';
+  mostrarStatusDesconto('Lendo planilha da Shopee e fazendo lookup dos preços...', null);
+
+  try {
+    const res = await fetch('/api/desconto', { method: 'POST', body: fd });
+    if (!res.ok) {
+      let msg = 'Erro ao gerar planilha de desconto.';
+      try {
+        const data = await res.json();
+        if (data?.detail) msg = data.detail;
+      } catch { /* not JSON */ }
+      mostrarStatusDesconto(msg, 'error');
+      return;
+    }
+
+    // Sucesso — extrair filename do Content-Disposition + baixar
+    const blob = await res.blob();
+    const dispo = res.headers.get('Content-Disposition') || '';
+    const m = dispo.match(/filename="?([^"]+)"?/);
+    const filename = m ? m[1] : `discount_25off.xlsx`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const avisosCount = parseInt(res.headers.get('X-Avisos-Count') || '0', 10);
+    if (avisosCount > 0) {
+      const avisos = (res.headers.get('X-Avisos') || '').split('|').filter(Boolean);
+      mostrarStatusDesconto(
+        `Pronto! ${avisosCount} SKU(s) sem lookup (preço vazio nessas linhas): ${avisos.slice(0, 2).join('; ')}${avisosCount > 2 ? '...' : ''}`,
+        'success'
+      );
+    } else {
+      mostrarStatusDesconto('Planilha de desconto gerada e baixada com sucesso.', 'success');
+    }
+  } catch (err) {
+    mostrarStatusDesconto(`Não foi possível conectar ao servidor: ${err.message || err}`, 'error');
+  } finally {
+    btnDesconto.disabled = false;
+    btnDesconto.textContent = labelOriginal;
+  }
+}
+
+function mostrarStatusDesconto(msg, tipo) {
+  if (!descontoStatus) return;
+  descontoStatus.textContent = msg;
+  descontoStatus.classList.remove('success', 'error');
+  if (tipo === 'success') descontoStatus.classList.add('success');
+  if (tipo === 'error')   descontoStatus.classList.add('error');
+  descontoStatus.style.display = msg ? 'block' : 'none';
 }
