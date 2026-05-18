@@ -209,8 +209,7 @@ def gerar_shopee(input_json: dict, output_dir: str) -> str:
                 CONFIG["default_stock"],        # L: Estoque
                 sku_var,                        # M: SKU Variacao
                 "", "",                         # N: Template medidas, O: Img tamanhos
-                "",                             # P: GTIN
-                CONFIG.get("shopee_brand_id", ""),  # Q: ID da marca (rankeamento SEO)
+                "", "",                         # P: GTIN, Q: ID marca (vazio — deu problema com 5485339)
                 img_capa,                       # R: Imagem de capa
                 img1,                           # S: Imagem 1
                 img2,                           # T: Imagem 2
