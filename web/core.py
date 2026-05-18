@@ -113,10 +113,18 @@ def _carregar_skus_existentes() -> dict:
     return skus
 
 
+# Lojas onde o LLM NAO deve inventar nomes alternativos em caso de conflito.
+# Pra essas, o resolver vai direto pro sufixo NoN — preserva os temas
+# canonicos (Carros, Bailarina, Animais Fofos, etc.) em vez de inventar
+# nomes aleatorios fora dos 10 temas curados.
+_LOJAS_SUFIXO_NON_DIRETO = {"DecorKids"}
+
+
 def _resolver_conflitos_sku(
     produtos_brutos: list[dict],
     avisos: list[str],
     tema_loja: str = "",
+    loja: str = "",
 ) -> None:
     """
     Para cada produto, garante que `nome_curto_ai` nao conflita com SKU ja
@@ -124,15 +132,18 @@ def _resolver_conflitos_sku(
 
     Estrategia:
       1. Se nome ja livre, mantem.
-      2. Pede ao LLM outro nome ate 3 vezes (passando 'evitar' lista).
+      2. (Lojas com tema curado, ex DecorKids) pula direto pro sufixo NoN.
+         (Outras lojas) pede ao LLM outro nome ate 3 vezes (lista 'evitar').
       3. Se ainda conflita, adiciona sufixo No2, No3, ... ate achar livre.
 
     Modifica produtos_brutos in-place (atualiza nome_curto_ai e nome_display_ai).
     """
+    usar_llm_retry = loja not in _LOJAS_SUFIXO_NON_DIRETO
+
     try:
         import traduzir_nome as _trad
     except ImportError:
-        return  # sem tradutor, ignora
+        usar_llm_retry = False  # sem tradutor, so resta sufixo NoN
 
     skus_existentes = _carregar_skus_existentes()
     nomes_no_lote: dict[str, str] = {}  # nome_curto -> display (intra-lote)
@@ -163,29 +174,37 @@ def _resolver_conflitos_sku(
             continue
 
         nome_original = nome_curto
-        evitar = [nome_curto]
 
-        # 2. Tenta 3 vezes pedir outro nome ao LLM
-        for tentativa in range(1, 4):
-            resultado_alt = _trad.traduzir_para_pt(
-                titulo, tema_loja=tema_loja, evitar=evitar,
-            )
-            curto_alt = resultado_alt["curto"]
-            display_alt = resultado_alt["display"]
-            # tipo nao muda aqui - foi definido no loop principal anterior
-            if not curto_alt:
-                print(f"[SKU] Tentativa {tentativa} (LLM): falhou", file=sys.stderr)
-                break
+        # 2. (Outras lojas) Tenta 3 vezes pedir outro nome ao LLM.
+        # Pra DecorKids (em _LOJAS_SUFIXO_NON_DIRETO), pula direto pro NoN
+        # — mantem tema canonico (Carros, Bailarina, etc.) em vez de inventar.
+        if usar_llm_retry:
+            evitar = [nome_curto]
+            for tentativa in range(1, 4):
+                resultado_alt = _trad.traduzir_para_pt(
+                    titulo, tema_loja=tema_loja, evitar=evitar,
+                )
+                curto_alt = resultado_alt["curto"]
+                display_alt = resultado_alt["display"]
+                if not curto_alt:
+                    print(f"[SKU] Tentativa {tentativa} (LLM): falhou", file=sys.stderr)
+                    break
+                print(
+                    f"[SKU] Tentativa {tentativa} (LLM): "
+                    f"'{nome_curto}' -> '{curto_alt}'",
+                    file=sys.stderr,
+                )
+                if not conflita(curto_alt, display_alt):
+                    nome_curto = curto_alt
+                    nome_display = display_alt
+                    break
+                evitar.append(curto_alt)
+        else:
             print(
-                f"[SKU] Tentativa {tentativa} (LLM): "
-                f"'{nome_curto}' -> '{curto_alt}'",
+                f"[SKU] Loja '{loja}' usa sufixo NoN direto "
+                f"(preserva tema canonico). Conflito: '{nome_curto}'",
                 file=sys.stderr,
             )
-            if not conflita(curto_alt, display_alt):
-                nome_curto = curto_alt
-                nome_display = display_alt
-                break
-            evitar.append(curto_alt)
 
         # 3. Se ainda conflita, adicionar sufixo NoN ate achar livre
         if conflita(nome_curto, nome_display):
@@ -435,7 +454,7 @@ def processar(
 
         # ── Etapa 2.7: Resolver conflitos de SKU (3 retries LLM + sufixo NoN) ──
         progresso("Resolvendo conflitos de SKU...", 42)
-        _resolver_conflitos_sku(produtos_brutos, avisos, tema_loja=tema_loja)
+        _resolver_conflitos_sku(produtos_brutos, avisos, tema_loja=tema_loja, loja=loja)
 
     # ── Etapa 3: Gerar nomes (PascalCase) e titulos SEO ──────────────────
     progresso("Gerando nomes e titulos SEO...", 50)
@@ -549,17 +568,47 @@ def processar(
         while len(urls_imgbb) < 4:
             urls_imgbb.append(None)
 
+        # Cada slot e independente — se a fonte tem so 1 ou 3 imagens, as
+        # demais colunas ficam vazias (nao clonam a capa). Shopee aceita
+        # imagem_1/2/3 vazias; nao e obrigatorio preencher as 4.
         produto["imagem_capa"] = urls_imgbb[0] or ""
-        produto["imagem_1"]    = urls_imgbb[1] or urls_imgbb[0] or ""
-        produto["imagem_2"]    = urls_imgbb[2] or urls_imgbb[0] or ""
-        produto["imagem_3"]    = urls_imgbb[3] or urls_imgbb[0] or ""
+        produto["imagem_1"]    = urls_imgbb[1] or ""
+        produto["imagem_2"]    = urls_imgbb[2] or ""
+        produto["imagem_3"]    = urls_imgbb[3] or ""
 
         # delay entre produtos removido — upload_imagens ja paraleliza com
         # 4 workers; throttle inter-produto era margem extra pra rate-limit
         # ImgBB que se mostrou desnecessaria na pratica (operador estava
         # estourando 5min timeout do Vercel Hobby plan).
 
-    # ── Etapa 5: Montar JSON intermediario ────────────────────────────────
+    # ── Etapa 4.5: Separar OK x rejeitados ────────────────────────────────
+    # Criterio de rejeicao: imagem_capa vazia (upload falhou ou ImgBB rejeitou).
+    # Produto sem capa quebraria Shopee/ERP/Kakashi — melhor isolar.
+    produtos_ok = []
+    produtos_rejeitados = []
+    for p in produtos_processados:
+        if not p.get("imagem_capa"):
+            produtos_rejeitados.append({
+                "nome_arte_display": p["nome_arte_display"],
+                "nome_arte_sku":     p["nome_arte_sku"],
+                "tipo":              p["tipo"],
+                "motivo":            "imagem_capa vazia (upload ImgBB falhou)",
+            })
+            avisos.append(
+                f"Produto '{p['nome_arte_display']}' rejeitado: capa nao subiu pro ImgBB. "
+                f"Tente novamente — geralmente intermitencia da rede/ImgBB."
+            )
+        else:
+            produtos_ok.append(p)
+
+    if not produtos_ok:
+        raise ProcessamentoError(
+            f"Todos os {len(produtos_processados)} produtos foram rejeitados "
+            f"(upload de imagens falhou pra todos). Verifique conexao/ImgBB e tente de novo.",
+            avisos=avisos,
+        )
+
+    # ── Etapa 5: Montar JSON intermediario (so produtos OK) ───────────────
     progresso("Montando dados dos produtos...", 82)
     input_json = {
         "loja": loja,
@@ -574,7 +623,7 @@ def processar(
                 "imagem_2":          p["imagem_2"],
                 "imagem_3":          p["imagem_3"],
             }
-            for p in produtos_processados
+            for p in produtos_ok
         ],
     }
 
@@ -593,7 +642,7 @@ def processar(
         raise ProcessamentoError(f"Erro ao gerar planilha ERP: {e}")
 
     # ── Etapa 8: Gerar planilha Kakashi ───────────────────────────────────
-    progresso("Gerando planilha Kakashi...", 97)
+    progresso("Gerando planilha Kakashi...", 95)
     kakashi_path = None
     try:
         kakashi_path, avisos_kakashi = _export_kakashi.gerar_kakashi(input_json, output_dir)
@@ -601,12 +650,24 @@ def processar(
     except Exception as e:
         avisos.append(f"Erro ao gerar planilha Kakashi: {e}")
 
+    # ── Etapa 9: Gerar planilha de rejeitados (se houver) ─────────────────
+    rejeitados_path = None
+    if produtos_rejeitados:
+        progresso("Gerando planilha de rejeitados...", 98)
+        try:
+            import build_rejeitados_template as _build_rej
+            rejeitados_path = _build_rej.gerar_rejeitados(produtos_rejeitados, output_dir, loja)
+        except Exception as e:
+            avisos.append(f"Erro ao gerar planilha de rejeitados: {e}")
+
     progresso("Concluido!", 100)
 
     return {
-        "shopee_path":  shopee_path,
-        "erp_path":     erp_path,
-        "kakashi_path": kakashi_path,
-        "produtos":     len(produtos_processados),
-        "avisos":       avisos,
+        "shopee_path":     shopee_path,
+        "erp_path":        erp_path,
+        "kakashi_path":    kakashi_path,
+        "rejeitados_path": rejeitados_path,
+        "produtos":        len(produtos_ok),
+        "rejeitados":      len(produtos_rejeitados),
+        "avisos":          avisos,
     }

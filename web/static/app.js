@@ -29,9 +29,11 @@ const progressBarFill = $('progress-bar-fill');
 const progressBar     = progressSection?.querySelector('[role=progressbar]');
 
 const resultSubtitle    = $('result-subtitle');
-const btnDownloadShopee  = $('btn-download-shopee');
-const btnDownloadErp     = $('btn-download-erp');
-const btnDownloadKakashi = $('btn-download-kakashi');
+const btnDownloadShopee     = $('btn-download-shopee');
+const btnDownloadErp        = $('btn-download-erp');
+const btnDownloadKakashi    = $('btn-download-kakashi');
+const btnDownloadRejeitados = $('btn-download-rejeitados');
+const downloadRejeitadosHint= $('download-rejeitados-hint');
 const avisosBox         = $('avisos-box');
 const avisosLista       = $('avisos-lista');
 const btnNovaPlanilha   = $('btn-nova-planilha');
@@ -181,6 +183,7 @@ function configurarBotoes() {
   btnDownloadShopee?.addEventListener('click', () => baixarArquivo('shopee'));
   btnDownloadErp?.addEventListener('click', () => baixarArquivo('erp'));
   btnDownloadKakashi?.addEventListener('click', () => baixarArquivo('kakashi'));
+  btnDownloadRejeitados?.addEventListener('click', () => baixarArquivo('rejeitados'));
 }
 
 function atualizarBotao() {
@@ -262,7 +265,26 @@ function atualizarProgresso(mensagem, pct) {
 
 function mostrarResultado(data) {
   const n = data.produtos || 0;
-  resultSubtitle.textContent = `${n} produto${n !== 1 ? 's' : ''} processado${n !== 1 ? 's' : ''} com sucesso.`;
+  const rej = data.rejeitados || 0;
+  if (rej > 0) {
+    resultSubtitle.textContent =
+      `${n} produto${n !== 1 ? 's' : ''} OK + ${rej} rejeitado${rej !== 1 ? 's' : ''} (baixe a planilha "Rejeitados" pra revisar).`;
+  } else {
+    resultSubtitle.textContent = `${n} produto${n !== 1 ? 's' : ''} processado${n !== 1 ? 's' : ''} com sucesso.`;
+  }
+
+  // Botao "Planilha de Rejeitados" so aparece se houver
+  if (btnDownloadRejeitados) {
+    if (data.tem_rejeitados && rej > 0) {
+      btnDownloadRejeitados.style.display = '';
+      if (downloadRejeitadosHint) {
+        downloadRejeitadosHint.textContent =
+          `${rej} produto${rej !== 1 ? 's' : ''} com falha — revisar e retentar`;
+      }
+    } else {
+      btnDownloadRejeitados.style.display = 'none';
+    }
+  }
 
   if (data.avisos?.length) {
     avisosLista.innerHTML = '';

@@ -61,7 +61,9 @@ class JobState:
     shopee_path: Optional[str] = None
     erp_path: Optional[str] = None
     kakashi_path: Optional[str] = None
+    rejeitados_path: Optional[str] = None
     produtos: int = 0
+    rejeitados: int = 0
     avisos: list = field(default_factory=list)
     erro: Optional[str] = None
     criado_em: datetime = field(default_factory=datetime.now)
@@ -88,17 +90,19 @@ def _salvar_estado(job: JobState) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump({
-                "job_id":       job.job_id,
-                "status":       job.status,
-                "mensagem":     job.mensagem,
-                "percent":      job.percent,
-                "shopee_path":  job.shopee_path,
-                "erp_path":     job.erp_path,
-                "kakashi_path": job.kakashi_path,
-                "produtos":     job.produtos,
-                "avisos":       job.avisos,
-                "erro":         job.erro,
-                "criado_em":    job.criado_em.isoformat(),
+                "job_id":          job.job_id,
+                "status":          job.status,
+                "mensagem":        job.mensagem,
+                "percent":         job.percent,
+                "shopee_path":     job.shopee_path,
+                "erp_path":        job.erp_path,
+                "kakashi_path":    job.kakashi_path,
+                "rejeitados_path": job.rejeitados_path,
+                "produtos":        job.produtos,
+                "rejeitados":      job.rejeitados,
+                "avisos":          job.avisos,
+                "erro":            job.erro,
+                "criado_em":       job.criado_em.isoformat(),
             }, f, ensure_ascii=False)
     except Exception as e:
         # Persistencia e best-effort — falha aqui nao pode quebrar o pipeline
@@ -123,7 +127,9 @@ def _carregar_estado(job_id: str) -> Optional[JobState]:
             shopee_path=d.get("shopee_path"),
             erp_path=d.get("erp_path"),
             kakashi_path=d.get("kakashi_path"),
+            rejeitados_path=d.get("rejeitados_path"),
             produtos=d.get("produtos", 0),
+            rejeitados=d.get("rejeitados", 0),
             avisos=d.get("avisos", []),
             erro=d.get("erro"),
             criado_em=datetime.fromisoformat(d["criado_em"]) if d.get("criado_em") else datetime.now(),
@@ -222,12 +228,19 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
             processar, filepath, loja, output_dir, modo, progresso
         )
         job.status = "concluido"
-        job.mensagem = f"{resultado['produtos']} produtos processados com sucesso!"
+        n_ok = resultado["produtos"]
+        n_rej = resultado.get("rejeitados", 0)
+        if n_rej > 0:
+            job.mensagem = f"{n_ok} produtos OK + {n_rej} rejeitados (veja a planilha 'Rejeitados')."
+        else:
+            job.mensagem = f"{n_ok} produtos processados com sucesso!"
         job.percent = 100
         job.shopee_path = resultado["shopee_path"]
         job.erp_path = resultado["erp_path"]
         job.kakashi_path = resultado.get("kakashi_path")
-        job.produtos = resultado["produtos"]
+        job.rejeitados_path = resultado.get("rejeitados_path")
+        job.produtos = n_ok
+        job.rejeitados = n_rej
         job.avisos = resultado.get("avisos", [])
 
     except ProcessamentoError as e:
@@ -262,20 +275,22 @@ async def status(job_id: str):
     if not job:
         raise HTTPException(404, detail="Job não encontrado")
     return {
-        "job_id":    job_id,
-        "status":    job.status,
-        "mensagem":  job.mensagem,
-        "percent":   job.percent,
-        "produtos":  job.produtos,
-        "avisos":    job.avisos,
-        "erro":      job.erro,
+        "job_id":          job_id,
+        "status":          job.status,
+        "mensagem":        job.mensagem,
+        "percent":         job.percent,
+        "produtos":        job.produtos,
+        "rejeitados":      job.rejeitados,
+        "tem_rejeitados":  bool(job.rejeitados_path),
+        "avisos":          job.avisos,
+        "erro":            job.erro,
     }
 
 
 @app.get("/api/download/{job_id}/{tipo}")
 async def download(job_id: str, tipo: str):
-    if tipo not in ("shopee", "erp", "kakashi"):
-        raise HTTPException(400, detail="Tipo deve ser 'shopee', 'erp' ou 'kakashi'")
+    if tipo not in ("shopee", "erp", "kakashi", "rejeitados"):
+        raise HTTPException(400, detail="Tipo deve ser 'shopee', 'erp', 'kakashi' ou 'rejeitados'")
 
     job = _get_job(job_id)
     if not job:
@@ -284,9 +299,10 @@ async def download(job_id: str, tipo: str):
         raise HTTPException(400, detail="Processamento ainda não concluído")
 
     caminho = {
-        "shopee":  job.shopee_path,
-        "erp":     job.erp_path,
-        "kakashi": job.kakashi_path,
+        "shopee":     job.shopee_path,
+        "erp":        job.erp_path,
+        "kakashi":    job.kakashi_path,
+        "rejeitados": job.rejeitados_path,
     }[tipo]
     if not caminho or not Path(caminho).exists():
         raise HTTPException(404, detail="Arquivo não encontrado")
