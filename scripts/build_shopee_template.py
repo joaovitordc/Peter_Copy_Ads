@@ -77,37 +77,20 @@ Informações Adicionais:
 Caso queira produzir algum quadro personalizado ou tinha alguma dúvida sobre o produto, não hesite em chamar nossa equipe no Chat."""
 
 
-# Vercel: /var/task e read-only. Escrita vai pra /tmp (ephemeral, perdido em
-# cold start) e leitura mergeia /var/task (commit do repo, fonte de verdade
-# inicial) + /tmp (escritas da invocation atual / warm starts subsequentes).
-# Em local, ambos os paths apontam pro mesmo arquivo.
-_IS_VERCEL = bool(os.environ.get("VERCEL"))
-SKUS_PATH_READ  = os.path.join(BASE_DIR, "skus_em_uso.json")
-SKUS_PATH_WRITE = "/tmp/skus_em_uso.json" if _IS_VERCEL else SKUS_PATH_READ
+# Banco de SKUs em uso agora mora em scripts/sku_storage (auto-decide entre
+# Supabase quando configurado e arquivo local como fallback). Em Vercel sem
+# Supabase, escreve em /tmp (volatil); em dev local, escreve no arquivo do
+# repo. Esses wrappers existem so pra retrocompat — codigo novo deve chamar
+# sku_storage diretamente.
+import sku_storage as _sku_storage  # noqa: E402  (import depois das dependencias acima)
 
 
 def carregar_skus() -> dict:
-    """Le SKUs do deploy (read-only) e merge com /tmp se houver escritas locais."""
-    skus: dict = {}
-    if os.path.exists(SKUS_PATH_READ):
-        with open(SKUS_PATH_READ, encoding="utf-8") as f:
-            try:
-                skus.update(json.load(f))
-            except json.JSONDecodeError:
-                pass
-    # Se Vercel, /tmp tem escritas da lambda atual — prevalece sobre o deploy
-    if SKUS_PATH_WRITE != SKUS_PATH_READ and os.path.exists(SKUS_PATH_WRITE):
-        with open(SKUS_PATH_WRITE, encoding="utf-8") as f:
-            try:
-                skus.update(json.load(f))
-            except json.JSONDecodeError:
-                pass
-    return skus
+    return _sku_storage.carregar()
 
 
 def salvar_skus(skus: dict):
-    with open(SKUS_PATH_WRITE, "w", encoding="utf-8") as f:
-        json.dump(skus, f, indent=2, ensure_ascii=False)
+    _sku_storage.salvar(skus)
 
 
 def get_preco(tipo: str, tamanho_sku: str, tipo_moldura: str) -> float:

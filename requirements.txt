@@ -29,3 +29,11 @@ openai
 # Crop quadrado (1:1) das 4 imagens do produto antes do upload pro ImgBB —
 # Shopee exige imagens quadradas pro card de listagem (CTR algoritmico).
 Pillow
+
+# Banco de SKUs em uso (Supabase via Marketplace Vercel). Substitui o
+# skus_em_uso.json local que era volatil no /tmp da Lambda Vercel. Caminho
+# pro ERP futuro: mesmo banco recebe tabelas adicionais (produtos, vendas).
+# Sem SDK — usamos PostgREST direto via `requests` (ja na dep acima).
+# Motivo: supabase-py puxa pyiceberg que requer Microsoft C++ Build Tools
+# no Windows, complica o setup local sem trazer ganho real pro nosso caso
+# (CRUD simples de uma unica tabela).

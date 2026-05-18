@@ -292,6 +292,41 @@ detectar `KIT4`+, cai pra Q1 com warning — operador resolve manualmente.
 `/api/desconto`. Frontend: card secundário em `index.html` + handler em
 `app.js`.
 
+### Banco de SKUs no Supabase (18/05/2026)
+
+**Problema:** `skus_em_uso.json` ficava em `/tmp/` na Vercel (Lambda Hobby tem
+filesystem read-only em `/var/task`). `/tmp` é ephemeral — cold start apaga.
+Resultado: SKUs cadastrados via Vercel evaporavam entre runs → conflito de
+dedup → erro no upload Shopee.
+
+**Solução:** banco PostgreSQL hospedado no Supabase (provisionado via
+Vercel Marketplace, free 500MB DB). Substitui o JSON local sem perder
+funcionalidade.
+
+**Abstração:** `scripts/sku_storage.py` expõe interface única
+(`carregar()`, `salvar()`, `liberar()`, `adicionar()`) e auto-decide o
+backend baseado em env vars:
+- `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` presentes → backend Supabase
+  (PostgREST direto via `requests`, sem SDK — `supabase-py` puxa pyiceberg
+  que requer Visual C++ no Windows)
+- Caso contrário → fallback local em arquivo `skus_em_uso.json` (dev mode +
+  defensive fallback se Supabase ficar offline)
+
+**Schema:** tabela `skus_em_uso (sku_base PK, loja, tipo, display, criado_em)`.
+SQL DDL em [scripts/supabase_schema.sql](../scripts/supabase_schema.sql).
+
+**Migração inicial:** [scripts/migrate_to_supabase.py](../scripts/migrate_to_supabase.py)
+sobe os SKUs do JSON pra tabela (idempotente — upsert).
+
+**Callers refatorados:**
+- `scripts/build_shopee_template.carregar_skus()` / `salvar_skus()` — wrappers
+  finos que delegam pra `sku_storage` (retrocompat preservada)
+- `web/core.py:_carregar_skus_existentes()` — usa `sku_storage.carregar()`
+
+**Caminho pro ERP futuro:** mesmo banco Supabase recebe novas tabelas
+(`produtos`, `vendas`, `estoque`...) sem refator desse módulo. `skus_em_uso`
+continua sendo a tabela de "nomes reservados", complementando o ERP.
+
 ## Filtro de imagens (modo "So Links")
 
 Anuncios Etsy frequentemente tem imagens que NAO sao do quadro (cards de texto

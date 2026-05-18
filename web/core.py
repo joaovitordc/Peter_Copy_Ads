@@ -90,27 +90,14 @@ def _titulo_do_slug(url: str) -> str:
 
 
 def _carregar_skus_existentes() -> dict:
-    """Carrega skus_em_uso.json. Retorna dict vazio se nao existir.
-
-    Na Vercel, mergeia /var/task (do deploy, read-only — fonte historica) com
-    /tmp/skus_em_uso.json (escritas dessa lambda) — alinhado com a logica de
-    build_shopee_template.carregar_skus.
-    """
-    is_vercel = bool(os.environ.get("VERCEL"))
-    paths = [BASE_DIR / "skus_em_uso.json"]
-    if is_vercel:
-        paths.append(Path("/tmp/skus_em_uso.json"))
-
-    skus: dict = {}
-    for p in paths:
-        if not p.exists():
-            continue
-        try:
-            with open(p, encoding="utf-8") as f:
-                skus.update(json.load(f))
-        except Exception:
-            continue
-    return skus
+    """Carrega SKUs em uso via scripts/sku_storage (Supabase quando configurado,
+    arquivo local como fallback). Retorna dict vazio em caso de erro."""
+    try:
+        import sku_storage
+        return sku_storage.carregar()
+    except Exception as e:
+        print(f"[AVISO] _carregar_skus_existentes falhou: {e}", file=sys.stderr)
+        return {}
 
 
 # Lojas onde o LLM NAO deve inventar nomes alternativos em caso de conflito.
