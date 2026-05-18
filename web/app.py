@@ -173,16 +173,24 @@ async def index():
 
 @app.get("/api/lojas")
 async def get_lojas():
-    descricoes = {
-        "PPJ":        "Quadros religiosos e minimalistas",
-        "iPaper":     "Arte, Bauhaus e design moderno",
-        "AllQuadros": "Moderno, minimalista, boho",
-        "DecorKids":  "Quadros para decoração infantil",
-    }
-    lojas = [
-        {"id": nome, "nome": nome, "descricao": descricoes.get(nome, "")}
-        for nome in CONFIG["lojas"]
-    ]
+    """Retorna lista de lojas + categorias disponiveis por loja.
+
+    Frontend usa o array `categorias` pra renderizar sub-selecao quando
+    a loja tem mais de uma categoria (ex: AllQuadros = Padrao / Infantil).
+    """
+    lojas = []
+    for nome, cfg in CONFIG["lojas"].items():
+        categorias = [
+            {"id": cat_id, "nome": cat.get("rotulo", cat_id.capitalize())}
+            for cat_id, cat in cfg.get("categorias", {}).items()
+        ]
+        lojas.append({
+            "id": nome,
+            "nome": nome,
+            "descricao": cfg.get("descricao", ""),
+            "categoria_default": cfg.get("categoria_default", "padrao"),
+            "categorias": categorias,
+        })
     return {"lojas": lojas}
 
 
@@ -192,8 +200,11 @@ async def processar(
     arquivo: UploadFile = File(...),
     loja: str = Form(...),
     modo: str = Form("links_com_imagens"),
+    categoria: str = Form(""),
 ):
-    """Inicia o processamento. modo: 'links' ou 'links_com_imagens'."""
+    """Inicia o processamento. modo: 'links' ou 'links_com_imagens'.
+    categoria: 'padrao' | 'infantil' | ... (vazio = categoria_default da loja).
+    """
 
     ext = Path(arquivo.filename).suffix.lower()
     if ext not in (".xlsx", ".xls", ".csv"):
@@ -204,6 +215,14 @@ async def processar(
 
     if modo not in ("links", "links_com_imagens"):
         raise HTTPException(400, detail="Modo inválido. Use 'links' ou 'links_com_imagens'.")
+
+    # Default = categoria_default da loja. Validacao concreta acontece em core.processar().
+    loja_cfg = CONFIG["lojas"][loja]
+    if not categoria:
+        categoria = loja_cfg.get("categoria_default", "padrao")
+    if categoria not in loja_cfg.get("categorias", {}):
+        cats_validas = ", ".join(loja_cfg.get("categorias", {}).keys())
+        raise HTTPException(400, detail=f"Categoria '{categoria}' inválida para '{loja}'. Use: {cats_validas}")
 
     job_id = str(uuid.uuid4())
     job_dir = JOBS_DIR / job_id
@@ -216,13 +235,17 @@ async def processar(
 
     jobs[job_id] = JobState(job_id=job_id, loja=loja, output_dir=str(job_dir))
     _salvar_estado(jobs[job_id])  # persistencia imediata pra polling pegar mesmo em outra request
-    background_tasks.add_task(_executar_pipeline, job_id, str(input_path), loja, modo, str(job_dir))
+    background_tasks.add_task(
+        _executar_pipeline, job_id, str(input_path), loja, modo, str(job_dir), categoria,
+    )
     _limpar_jobs_antigos()
 
     return {"job_id": job_id}
 
 
-async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, output_dir: str):
+async def _executar_pipeline(
+    job_id: str, filepath: str, loja: str, modo: str, output_dir: str, categoria: str = "",
+):
     from web.core import processar, ProcessamentoError
 
     job = jobs.get(job_id)
@@ -240,7 +263,7 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
 
     try:
         resultado = await asyncio.to_thread(
-            processar, filepath, loja, output_dir, modo, progresso
+            processar, filepath, loja, output_dir, modo, progresso, categoria,
         )
         job.status = "concluido"
         n_ok = resultado["produtos"]
@@ -446,6 +469,86 @@ async def descartar(payload: dict):
         "removidos_do_db":  len(removidos_db),
         "mensagem":         f"{n_descartados} produtos descartados. Planilhas regeneradas. SKUs liberados pra reuso: {len(removidos_db)}.",
     }
+
+
+@app.get("/api/skus")
+async def listar_skus(loja: str = "", q: str = ""):
+    """Lista todos os SKUs cadastrados no banco (Supabase ou local).
+
+    Query params:
+      loja — filtra so SKUs cadastrados na loja informada (ex: PPJ).
+      q    — busca substring (case-insensitive) em sku_base ou display.
+
+    Retorna {backend, total, skus: [{sku_base, lojas, tipo, display, criado_em}]}
+    """
+    import sku_storage as _sku_storage
+    try:
+        skus_dict = _sku_storage.carregar()
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao carregar SKUs: {e}")
+
+    q_lower = q.strip().lower()
+    resultado = []
+    for sku_base, info_sku in skus_dict.items():
+        lojas = info_sku.get("lojas") or []
+        if loja and loja not in lojas:
+            continue
+        display = info_sku.get("display", "") or ""
+        if q_lower and q_lower not in sku_base.lower() and q_lower not in display.lower():
+            continue
+        resultado.append({
+            "sku_base":  sku_base,
+            "lojas":     lojas,
+            "tipo":      info_sku.get("tipo", ""),
+            "display":   display,
+            "criado_em": info_sku.get("criado_em", ""),
+        })
+
+    # Ordena por sku_base pra UI estavel
+    resultado.sort(key=lambda r: r["sku_base"].lower())
+
+    return {
+        "backend": _sku_storage.info(),
+        "total":   len(resultado),
+        "skus":    resultado,
+    }
+
+
+@app.delete("/api/skus/{sku_base}")
+async def deletar_sku(sku_base: str):
+    """Apaga uma linha INTEIRA da tabela peter_skus_em_uso — libera o nome
+    pra reuso futuro independente de quantas lojas estavam no array.
+
+    Operacao administrativa, irreversivel. Use /api/skus/{sku}/loja/{loja}
+    se quiser remover so de uma loja especifica.
+    """
+    if not sku_base:
+        raise HTTPException(400, detail="sku_base obrigatorio")
+    import sku_storage as _sku_storage
+    try:
+        ok = _sku_storage.liberar(sku_base)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao apagar SKU: {e}")
+    if not ok:
+        raise HTTPException(404, detail=f"SKU '{sku_base}' nao encontrado.")
+    return {"sku_base": sku_base, "removido": True}
+
+
+@app.delete("/api/skus/{sku_base}/loja/{loja}")
+async def deletar_sku_loja(sku_base: str, loja: str):
+    """Remove `loja` do array `lojas_cadastradas` do SKU. Se o array ficar
+    vazio depois, a linha eh deletada automaticamente (libera o nome).
+    """
+    if not sku_base or not loja:
+        raise HTTPException(400, detail="sku_base e loja obrigatorios")
+    import sku_storage as _sku_storage
+    try:
+        ok = _sku_storage.liberar_loja(sku_base, loja)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao remover loja: {e}")
+    if not ok:
+        raise HTTPException(404, detail=f"SKU '{sku_base}' nao tinha '{loja}' no array.")
+    return {"sku_base": sku_base, "loja": loja, "removido": True}
 
 
 @app.get("/api/modelo/{tipo}")

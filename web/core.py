@@ -100,11 +100,11 @@ def _carregar_skus_existentes() -> dict:
         return {}
 
 
-# Lojas onde o LLM NAO deve inventar nomes alternativos em caso de conflito.
-# Pra essas, o resolver vai direto pro sufixo NoN — preserva os temas
-# canonicos (Carros, Bailarina, Animais Fofos, etc.) em vez de inventar
-# nomes aleatorios fora dos 10 temas curados.
-_LOJAS_SUFIXO_NON_DIRETO = {"DecorKids"}
+# (loja, categoria) onde o LLM NAO deve inventar nomes alternativos em caso
+# de conflito. Pra essas, o resolver vai direto pro sufixo NoN — preserva
+# os temas canonicos (Carros, Bailarina, Animais Fofos, etc.) em vez de
+# inventar nomes aleatorios fora dos 10 temas curados.
+_CATEGORIAS_SUFIXO_NON_DIRETO = {("AllQuadros", "infantil")}
 
 
 def _resolver_conflitos_sku(
@@ -112,6 +112,7 @@ def _resolver_conflitos_sku(
     avisos: list[str],
     tema_loja: str = "",
     loja: str = "",
+    categoria: str = "padrao",
 ) -> None:
     """
     Para cada produto, garante que `nome_curto_ai` nao conflita com SKU ja
@@ -119,13 +120,13 @@ def _resolver_conflitos_sku(
 
     Estrategia:
       1. Se nome ja livre, mantem.
-      2. (Lojas com tema curado, ex DecorKids) pula direto pro sufixo NoN.
-         (Outras lojas) pede ao LLM outro nome ate 3 vezes (lista 'evitar').
+      2. (Categorias com tema curado, ex AllQuadros/infantil) pula direto pro
+         sufixo NoN. (Outras) pede ao LLM outro nome ate 3 vezes (lista 'evitar').
       3. Se ainda conflita, adiciona sufixo No2, No3, ... ate achar livre.
 
     Modifica produtos_brutos in-place (atualiza nome_curto_ai e nome_display_ai).
     """
-    usar_llm_retry = loja not in _LOJAS_SUFIXO_NON_DIRETO
+    usar_llm_retry = (loja, categoria) not in _CATEGORIAS_SUFIXO_NON_DIRETO
 
     try:
         import traduzir_nome as _trad
@@ -162,9 +163,9 @@ def _resolver_conflitos_sku(
 
         nome_original = nome_curto
 
-        # 2. (Outras lojas) Tenta 3 vezes pedir outro nome ao LLM.
-        # Pra DecorKids (em _LOJAS_SUFIXO_NON_DIRETO), pula direto pro NoN
-        # — mantem tema canonico (Carros, Bailarina, etc.) em vez de inventar.
+        # 2. (Outras categorias) Tenta 3 vezes pedir outro nome ao LLM.
+        # Pra (AllQuadros, infantil) em _CATEGORIAS_SUFIXO_NON_DIRETO, pula
+        # direto pro NoN — mantem tema canonico (Carros, Bailarina, etc.).
         if usar_llm_retry:
             evitar = [nome_curto]
             for tentativa in range(1, 4):
@@ -228,6 +229,7 @@ def processar(
     output_dir: str,
     modo: str = "links_com_imagens",
     progress_cb: Callable[[str, int], None] | None = None,
+    categoria: str = "",
 ) -> dict:
     """
     Pipeline completo: planilha → 2 planilhas geradas (Shopee + ERP).
@@ -238,6 +240,8 @@ def processar(
         output_dir:  Pasta de destino das planilhas geradas
         modo:        "links" (requer API Etsy) | "links_com_imagens" (sem API)
         progress_cb: Callback(mensagem, percentual)
+        categoria:   "padrao" | "infantil" (so AllQuadros tem 'infantil').
+                     Vazio = usa categoria_default da loja.
 
     Returns:
         {"shopee_path", "erp_path", "produtos", "avisos"}
@@ -251,7 +255,19 @@ def processar(
     if loja not in CONFIG["lojas"]:
         raise ProcessamentoError(f"Loja '{loja}' invalida. Use: {', '.join(CONFIG['lojas'].keys())}")
 
-    tema_loja = CONFIG["lojas"][loja].get("tema_loja", "")
+    loja_cfg = CONFIG["lojas"][loja]
+
+    # Validar categoria (default = categoria_default da loja)
+    if not categoria:
+        categoria = loja_cfg.get("categoria_default", "padrao")
+    if categoria not in loja_cfg["categorias"]:
+        cats_validas = ", ".join(loja_cfg["categorias"].keys())
+        raise ProcessamentoError(
+            f"Categoria '{categoria}' invalida para loja '{loja}'. Use: {cats_validas}"
+        )
+
+    cat_cfg = loja_cfg["categorias"][categoria]
+    tema_loja = cat_cfg.get("tema_loja", "")
 
     # No modo 'links' precisamos de pelo menos um fetcher (Firecrawl OU Etsy API)
     fetcher = None
@@ -441,7 +457,9 @@ def processar(
 
         # ── Etapa 2.7: Resolver conflitos de SKU (3 retries LLM + sufixo NoN) ──
         progresso("Resolvendo conflitos de SKU...", 42)
-        _resolver_conflitos_sku(produtos_brutos, avisos, tema_loja=tema_loja, loja=loja)
+        _resolver_conflitos_sku(
+            produtos_brutos, avisos, tema_loja=tema_loja, loja=loja, categoria=categoria,
+        )
 
     # ── Etapa 3: Gerar nomes (PascalCase) e titulos SEO ──────────────────
     progresso("Gerando nomes e titulos SEO...", 50)
@@ -521,7 +539,9 @@ def processar(
             print(f"[DEBUG][SEO] titulo bruto: {repr(titulo)}", file=sys.stderr)
             continue
 
-        titulo_shopee = gerar_titulo_seo(loja, nome_display, tipo, titulo, CONFIG)
+        titulo_shopee = gerar_titulo_seo(
+            loja, nome_display, tipo, titulo, CONFIG, categoria=categoria,
+        )
 
         produtos_processados.append({
             "nome_arte_sku":     nome_sku,
@@ -599,6 +619,7 @@ def processar(
     progresso("Montando dados dos produtos...", 82)
     input_json = {
         "loja": loja,
+        "categoria": categoria,
         "produtos": [
             {
                 "nome_arte_sku":     p["nome_arte_sku"],

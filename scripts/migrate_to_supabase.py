@@ -29,6 +29,13 @@ sys.stdout.reconfigure(encoding="utf-8")
 BASE = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE / "scripts"))
 
+# Carrega .env ANTES de importar sku_storage (que le env vars em tempo de import)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE / ".env")
+except ImportError:
+    pass
+
 import sku_storage
 
 JSON_PATH = BASE / "skus_em_uso.json"

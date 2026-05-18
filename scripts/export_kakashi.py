@@ -56,7 +56,13 @@ def gerar_kakashi(input_json: dict, output_dir: str) -> tuple[str, list[str]]:
     """
     loja = input_json.get("loja", "LOJA")
     produtos = input_json.get("produtos", [])
-    prefixo = CONFIG["lojas"].get(loja, {}).get("prefixo_descricao_erp", "")
+    loja_cfg = CONFIG["lojas"].get(loja, {})
+    # Categoria — mesmo prefixo que o ERP (sincroniza descrica no PDF gerado).
+    categoria = (
+        input_json.get("categoria")
+        or loja_cfg.get("categoria_default", "padrao")
+    )
+    prefixo = loja_cfg.get("categorias", {}).get(categoria, {}).get("prefixo_descricao_erp", "")
     avisos: list[str] = []
 
     os.makedirs(output_dir, exist_ok=True)

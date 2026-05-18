@@ -227,35 +227,58 @@ na Shopee, sem retrabalho.
 
 **Template antigo permanece em `planilhas_padrao/`** como histórico.
 
-### Nova loja DecorKids — decoração infantil (29/04/2026)
+### 3 lojas + categorias temáticas dentro de cada loja (18/05/2026)
 
-Sistema agora suporta **4 lojas**: PPJ, iPaper, AllQuadros e **DecorKids**.
+Sistema usa **3 lojas reais** (contas Shopee distintas):
+**PPJ**, **iPaper** e **AllQuadros**. Cada loja tem 1 ou mais **categorias
+temáticas internas** que controlam o template de título Shopee, o tema do
+LLM (pra inventar nomes) e o prefixo da descrição ERP/Kakashi.
 
-**Diferenças do DecorKids:**
-- **Template Shopee** com formato do anúncio concorrente:
-  - Q1: `Quadro Decorativo Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}`
-  - KIT: `Kit {n} Quadros Decorativos Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}`
-  - "Infantil" singular mesmo em KIT (busca SEO BR é "infantil", não "infantis")
-  - Pipe `|` separa o bloco SEO do bloco demográfico
-- **Descrição ERP/Kakashi** ganha prefixo `Infantil ` entre `tipo_nome` e
-  `nome_display`. Exemplo: `Kit 3 Quadros - Infantil Animais Safari No13`.
-  Implementado via novo campo `prefixo_descricao_erp` no `config.json` —
-  PPJ/iPaper/AllQuadros têm `""`, DecorKids tem `"Infantil "`.
-- **SKU sem prefixo**: `KIT3_AnimaisSafariNo13` (a palavra "Infantil" só
-  aparece nas descrições, nunca no SKU).
-- **10 temas curados** mapeados em `_extrair_seo_keywords` (DecorKids):
-  Safari, Animais Fofos, Natureza Boho, Transporte, Carros, Fundo do Mar,
-  Flores e Floral, Arco Iris, Fada, Bailarina.
-- **Default `{seo}` vazio** quando nada bate (`defaults["DecorKids"] = ""`).
-  Sem default temático pra não enganar comprador. Cleanup de espaço duplo
-  do Fix v5 garante título limpo.
-- **Sufixos `NoN` altos esperados** (No13...No52) — vários produtos com mesmo
-  tema (ex: muitos "Animais Safari" com numerações diferentes). Operador
-  confirmou que isso é OK.
+**Categorias atuais:**
 
-**Pendência (placeholder):** `imagens_fixas["DecorKids"]` é cópia das URLs
-do AllQuadros. Operador deve fornecer 5 URLs ImgBB próprias do tema infantil
-e atualizar `config.json`.
+| Loja | Categoria | Quando usar | Prefixo ERP | Template Shopee |
+|------|-----------|-------------|------------|-----------------|
+| PPJ | padrao | Sempre | `""` | `Quadro Decorativo {seo} Para Sala...` |
+| iPaper | padrao | Sempre | `""` | `Quadro Decorativo {seo} Para Sala, Quarto...` |
+| AllQuadros | padrao | Vintage, floral, moderno | `""` | `Quadro Decorativo {seo} Moderno...` |
+| AllQuadros | infantil | Decoração infantil/bebê | `"Infantil "` | `Quadro Decorativo Infantil {seo} \| Quarto Bebê...` |
+
+A categoria **não é gravada no banco de SKUs** — só afeta a geração da
+planilha. O SKU `BailarinaFofa` da categoria infantil é persistido como
+`lojas_cadastradas=['AllQuadros']`, e o nome conflita globalmente com
+qualquer outra loja (mesma regra de antes).
+
+**Estrutura no config.json:**
+
+```json
+"lojas": {
+  "AllQuadros": {
+    "marca_erp": "AllQuadros",
+    "descricao": "...",
+    "categoria_default": "padrao",
+    "categorias": {
+      "padrao":   { "rotulo": "Padrão",   "titulo_padrao_q1": "...", "tema_loja": "...", "prefixo_descricao_erp": "" },
+      "infantil": { "rotulo": "Infantil", "titulo_padrao_q1": "...", "tema_loja": "...", "prefixo_descricao_erp": "Infantil " }
+    }
+  }
+}
+```
+
+**Endpoint `/api/lojas`** retorna agora `categorias` por loja. Frontend
+mostra sub-cards de categoria abaixo da grade de lojas **só quando a loja
+selecionada tem >1 categoria**.
+
+**Como adicionar uma nova categoria** (ex: AllQuadros/anime):
+1. Em `config.json`, adicionar bloco em `lojas.AllQuadros.categorias.anime` com `rotulo`, `titulo_padrao_q1`, `titulo_padrao_kit`, `tema_loja`, `prefixo_descricao_erp`.
+2. Em `web/art_name.py` `_extrair_seo_keywords`, adicionar entry `("AllQuadros", "anime"): [("anime", "Anime"), ("manga", "Anime"), ...]` se quiser SEO keywords curadas.
+3. Em `web/art_name.py` `defaults`, adicionar `("AllQuadros", "anime"): "Anime"` se quiser default temático.
+4. (Opcional) Em `web/core.py` `_CATEGORIAS_SUFIXO_NON_DIRETO`, adicionar `("AllQuadros", "anime")` se quiser pular o retry LLM em conflito.
+
+**Histórico** — Antes de 18/05/2026 o sistema tinha "DecorKids" como 4ª
+loja (mesmo shop_id Shopee da AllQuadros, com templates próprios).
+Refatorado pra `AllQuadros/infantil` pra preparar adição de outras categorias
+(anime, futebol, religioso...). Endpoint `/api/lojas`, frontend e callers
+foram atualizados.
 
 ### Estratégia "régua 25% off via tabela inflada" (16/05/2026)
 

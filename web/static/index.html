@@ -65,7 +65,12 @@
               <div class="loja-skeleton"></div>
               <div class="loja-skeleton"></div>
               <div class="loja-skeleton"></div>
-              <div class="loja-skeleton"></div>
+            </div>
+
+            <!-- Sub-selecao de categoria — aparece so quando a loja tem >1 categoria -->
+            <div class="categorias-row" id="categorias-row" style="display: none;">
+              <span class="categorias-label">Categoria:</span>
+              <div class="categorias-grid" id="categorias-grid"></div>
             </div>
           </section>
 
@@ -362,65 +367,65 @@
           <p class="desconto-status" id="desconto-status" style="display:none" role="status"></p>
         </div>
 
-      </main>
+        <!-- ── Banco de SKUs em uso (acessivel a qualquer momento) ── -->
+        <div class="glass-card skus-entry-card" id="skus-entry-section" style="margin-top: 1.5rem">
+          <div class="desconto-header">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <h2 class="desconto-title">Banco de SKUs em uso</h2>
+          </div>
+          <p class="desconto-desc">
+            Veja todos os SKUs cadastrados (Peter + Shopee). Use pra apagar
+            um SKU específico (libera o nome pra reuso) ou remover só uma loja
+            do array.
+          </p>
+          <button type="button" class="btn-primary" id="btn-abrir-skus">
+            Abrir banco de SKUs
+          </button>
+        </div>
 
-      <!-- ── Coluna direita: painel informativo ── -->
-      <aside class="info-pane" id="info-pane">
+        <!-- ── Tela do banco de SKUs (oculta por default) ── -->
+        <div class="glass-card skus-section" id="skus-section" style="display:none">
+          <div class="skus-header">
+            <h2 class="section-title" style="margin: 0">
+              <span class="step-badge">SKUs</span>
+              Banco de SKUs em uso
+            </h2>
+            <button type="button" class="btn-secondary" id="btn-fechar-skus">Fechar</button>
+          </div>
 
-        <!-- Status / progresso dos passos -->
-        <div class="glass-card">
-          <p class="info-card-title">Progresso</p>
-          <div class="info-status-list" id="info-status-list">
-            <div class="info-status-item active" data-step="loja">
-              <span class="info-status-bullet" aria-hidden="true">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <span>Selecionar loja</span>
+          <div class="skus-filtros">
+            <input type="search" class="skus-busca" id="skus-busca"
+                   placeholder="Buscar por SKU ou nome…" autocomplete="off">
+            <div class="skus-lojas-filtro" id="skus-lojas-filtro">
+              <button type="button" class="skus-filtro-pill selecionada" data-loja="">Todas</button>
+              <button type="button" class="skus-filtro-pill" data-loja="PPJ">PPJ</button>
+              <button type="button" class="skus-filtro-pill" data-loja="iPaper">iPaper</button>
+              <button type="button" class="skus-filtro-pill" data-loja="AllQuadros">AllQuadros</button>
             </div>
-            <div class="info-status-item" data-step="modo">
-              <span class="info-status-bullet" aria-hidden="true">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <span>Confirmar tipo de planilha</span>
-            </div>
-            <div class="info-status-item" data-step="arquivo">
-              <span class="info-status-bullet" aria-hidden="true">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <span>Enviar arquivo</span>
-            </div>
-            <div class="info-status-item" data-step="processar">
-              <span class="info-status-bullet" aria-hidden="true">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <span>Processar e baixar</span>
-            </div>
+          </div>
+
+          <p class="skus-status" id="skus-status">Carregando…</p>
+
+          <div class="skus-tabela-wrap">
+            <table class="skus-tabela" id="skus-tabela">
+              <thead>
+                <tr>
+                  <th>SKU base</th>
+                  <th>Lojas</th>
+                  <th>Tipo</th>
+                  <th>Display</th>
+                  <th>Criado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="skus-tbody"></tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Preview do formato esperado -->
-        <div class="glass-card">
-          <p class="info-card-title">Formato esperado</p>
-          <div id="info-preview-content"></div>
-        </div>
-
-        <!-- Dicas contextuais -->
-        <div class="glass-card">
-          <p class="info-card-title">Dicas</p>
-          <ul class="info-tips-list" id="info-tips-list">
-            <!-- preenchido por JS conforme modo -->
-          </ul>
-        </div>
-
-      </aside>
+      </main>
 
     </div>
 

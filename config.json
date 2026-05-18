@@ -1,5 +1,6 @@
 {
   "shopee_category_id": 101156,
+  "shopee_brand_id": 5485339,
   "default_stock": 1000,
   "default_weight_kg": 1.0,
   "default_comprimento_cm": 45,
@@ -24,13 +25,6 @@
       "img8": "https://i.ibb.co/tM3XzgFL/fe362c51a0a8.png"
     },
     "AllQuadros": {
-      "img4": "https://i.ibb.co/dJDGhL6s/61d43c09168c.png",
-      "img5": "https://i.ibb.co/DDG16z05/f7ff194ed76f.png",
-      "img6": "https://i.ibb.co/Rpn78Hts/58ad16b6edc9.png",
-      "img7": "https://i.ibb.co/MyHwyf6x/69d8e29c1285.png",
-      "img8": "https://i.ibb.co/hRz7rGzr/41b78c657fa6.png"
-    },
-    "DecorKids": {
       "img4": "https://i.ibb.co/dJDGhL6s/61d43c09168c.png",
       "img5": "https://i.ibb.co/DDG16z05/f7ff194ed76f.png",
       "img6": "https://i.ibb.co/Rpn78Hts/58ad16b6edc9.png",
@@ -127,32 +121,53 @@
   ],
   "lojas": {
     "PPJ": {
-      "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Escritório e Quarto - {nome_arte}",
-      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Escritório e Quarto - {nome_arte}",
       "marca_erp": "PPJ",
-      "tema_loja": "religioso, cristão, bíblico, espiritual, fé, salmos, versículos",
-      "prefixo_descricao_erp": ""
+      "descricao": "Quadros religiosos e minimalistas",
+      "categoria_default": "padrao",
+      "categorias": {
+        "padrao": {
+          "rotulo": "Padrão",
+          "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Escritório e Quarto - {nome_arte}",
+          "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Escritório e Quarto - {nome_arte}",
+          "tema_loja": "religioso, cristão, bíblico, espiritual, fé, salmos, versículos",
+          "prefixo_descricao_erp": ""
+        }
+      }
     },
     "iPaper": {
-      "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
-      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
       "marca_erp": "iPaper",
-      "tema_loja": "abstrato, moderno, Bauhaus, geométrico, minimalista, design contemporâneo",
-      "prefixo_descricao_erp": ""
+      "descricao": "Arte, Bauhaus e design moderno",
+      "categoria_default": "padrao",
+      "categorias": {
+        "padrao": {
+          "rotulo": "Padrão",
+          "titulo_padrao_q1":  "Quadro Decorativo {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
+          "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Para Sala, Quarto ou Escritório – {nome_arte}",
+          "tema_loja": "abstrato, moderno, Bauhaus, geométrico, minimalista, design contemporâneo",
+          "prefixo_descricao_erp": ""
+        }
+      }
     },
     "AllQuadros": {
-      "titulo_padrao_q1":  "Quadro Decorativo {seo} Moderno - {nome_arte}",
-      "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Modernos - {nome_arte}",
       "marca_erp": "AllQuadros",
-      "tema_loja": "vintage, natureza, tropical, floral, botânico, paisagem, animais",
-      "prefixo_descricao_erp": ""
-    },
-    "DecorKids": {
-      "titulo_padrao_q1":  "Quadro Decorativo Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
-      "titulo_padrao_kit": "Kit {n} Quadros Decorativos Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
-      "marca_erp": "DecorKids",
-      "tema_loja": "animais fofos, natureza boho, transporte, carros, fundo do mar, flores, arco iris, fada, bailarina, safari, lúdico, fofo, colorido",
-      "prefixo_descricao_erp": "Infantil "
+      "descricao": "Moderno, minimalista, boho + categorias temáticas",
+      "categoria_default": "padrao",
+      "categorias": {
+        "padrao": {
+          "rotulo": "Padrão",
+          "titulo_padrao_q1":  "Quadro Decorativo {seo} Moderno - {nome_arte}",
+          "titulo_padrao_kit": "Kit {n} Quadros Decorativos {seo} Modernos - {nome_arte}",
+          "tema_loja": "vintage, natureza, tropical, floral, botânico, paisagem, animais",
+          "prefixo_descricao_erp": ""
+        },
+        "infantil": {
+          "rotulo": "Infantil",
+          "titulo_padrao_q1":  "Quadro Decorativo Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
+          "titulo_padrao_kit": "Kit {n} Quadros Decorativos Infantil {seo} | Quarto Bebê Menino e Menina – {nome_arte}",
+          "tema_loja": "animais fofos, natureza boho, transporte, carros, fundo do mar, flores, arco iris, fada, bailarina, safari, lúdico, fofo, colorido",
+          "prefixo_descricao_erp": "Infantil "
+        }
+      }
     }
   }
 }

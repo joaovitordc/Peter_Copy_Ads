@@ -70,7 +70,15 @@ def gerar_erp(input_json: dict, output_dir: str, loja: str = None) -> str:
     produtos = input_json.get("produtos", [])
     loja_config = CONFIG["lojas"].get(loja, {})
     marca = loja_config.get("marca_erp", loja)
-    prefixo = loja_config.get("prefixo_descricao_erp", "")
+
+    # Categoria — afeta o prefixo da descricao (ex: AllQuadros/infantil -> "Infantil ").
+    # Vem do input_json (gravado pelo core.py); fallback pra categoria_default da loja.
+    categoria = (
+        input_json.get("categoria")
+        or loja_config.get("categoria_default", "padrao")
+    )
+    cat_config = loja_config.get("categorias", {}).get(categoria, {})
+    prefixo = cat_config.get("prefixo_descricao_erp", "")
 
     wb = openpyxl.Workbook()
     ws = wb.active

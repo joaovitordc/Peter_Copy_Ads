@@ -58,7 +58,14 @@ Vintage, Minimalista, Moderno, Aesthetic, Para Sala, Para Quarto, Decoração, C
 
 ---
 
-## DecorKids — Foco infantil / nursery / kids
+## AllQuadros / categoria "Infantil" — Foco infantil / nursery / kids
+
+> Refatoracao 18/05/2026: o que antes era "loja DecorKids" agora e a
+> categoria `infantil` dentro da loja `AllQuadros`. Mesmo template SEO,
+> mesmo prefixo ERP, mesmo conjunto de temas curados — apenas o SKU
+> agora persiste como `lojas_cadastradas=['AllQuadros']` em vez de
+> `['DecorKids']`. No frontend, o operador seleciona AllQuadros + clica
+> em "Infantil" no sub-card de categoria.
 
 **Padrao Q1:**
 ```

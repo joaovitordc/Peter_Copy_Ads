@@ -286,22 +286,30 @@ def gerar_nome_arte(
     return nome_sku, nome_display, tipo
 
 
-def gerar_titulo_seo(loja: str, nome_display: str, tipo: str, titulo_etsy: str, config: dict) -> str:
+def gerar_titulo_seo(
+    loja: str,
+    nome_display: str,
+    tipo: str,
+    titulo_etsy: str,
+    config: dict,
+    categoria: str = "padrao",
+) -> str:
     """
-    Gera o titulo SEO para a Shopee usando o template correto baseado em tipo.
+    Gera o titulo SEO para a Shopee usando o template correto baseado em tipo
+    e categoria da loja (ex: AllQuadros tem categorias 'padrao' e 'infantil').
     - Q1: usa titulo_padrao_q1 (Quadro Decorativo singular)
     - KITN: usa titulo_padrao_kit, com {n} substituido e {seo} pluralizado
     Limita a 120 caracteres.
     """
-    loja_config = config["lojas"][loja]
+    cat_config = config["lojas"][loja]["categorias"][categoria]
 
     # Selecionar template baseado em tipo
     if tipo == "Q1":
-        template = loja_config["titulo_padrao_q1"]
-        seo_keywords = _extrair_seo_keywords(loja, titulo_etsy)
+        template = cat_config["titulo_padrao_q1"]
+        seo_keywords = _extrair_seo_keywords(loja, titulo_etsy, categoria)
     else:  # KIT2, KIT3, KIT5, KIT6, KIT8
-        template = loja_config["titulo_padrao_kit"]
-        seo_singular = _extrair_seo_keywords(loja, titulo_etsy)
+        template = cat_config["titulo_padrao_kit"]
+        seo_singular = _extrair_seo_keywords(loja, titulo_etsy, categoria)
         seo_keywords = _pluralizar_pt(seo_singular)
 
     # Determinar n (numero de quadros no kit, vazio para Q1)
@@ -326,15 +334,17 @@ def gerar_titulo_seo(loja: str, nome_display: str, tipo: str, titulo_etsy: str, 
     return titulo
 
 
-def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
+def _extrair_seo_keywords(loja: str, titulo_etsy: str, categoria: str = "padrao") -> str:
     """
-    Extrai/seleciona palavras-chave SEO adequadas para a loja a partir do titulo Etsy.
+    Extrai/seleciona palavras-chave SEO adequadas para a loja+categoria a partir
+    do titulo Etsy. Cada combinacao (loja, categoria) tem seu proprio mapa de
+    keywords curado pra ranquear bem na busca SEO da Shopee BR.
     """
     titulo_lower = remover_acentos(titulo_etsy.lower())
 
-    # Keywords por loja (em ordem de preferencia)
-    keywords_por_loja = {
-        "PPJ": [
+    # Keywords por (loja, categoria) (em ordem de preferencia)
+    keywords_por_loja_cat = {
+        ("PPJ", "padrao"): [
             ("religioso", "Religioso"),
             ("christian", "Religioso"),
             ("cristao", "Cristão"),
@@ -350,7 +360,7 @@ def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
             ("minimalista", "Minimalista"),
             ("minimalist", "Minimalista"),
         ],
-        "iPaper": [
+        ("iPaper", "padrao"): [
             ("bauhaus", "Bauhaus"),
             ("abstrat", "Arte Abstrata"),
             ("abstract", "Arte Abstrata"),
@@ -363,7 +373,7 @@ def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
             ("minimalista", "Minimalista"),
             ("minimalist", "Minimalista"),
         ],
-        "AllQuadros": [
+        ("AllQuadros", "padrao"): [
             ("vintage", "Vintage"),
             ("safari", "Natureza"),
             ("tropical", "Tropical"),
@@ -375,7 +385,7 @@ def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
             ("minimalist", "Minimalista"),
             ("aesthetic", "Aesthetic"),
         ],
-        "DecorKids": [
+        ("AllQuadros", "infantil"): [
             # Safari (especifico)
             ("safari",        "Safari"),
             # Animais Fofos (generico de animais)
@@ -418,7 +428,7 @@ def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
         ],
     }
 
-    keywords = keywords_por_loja.get(loja, [])
+    keywords = keywords_por_loja_cat.get((loja, categoria), [])
     encontradas = []
 
     for chave, label in keywords:
@@ -427,15 +437,15 @@ def _extrair_seo_keywords(loja: str, titulo_etsy: str) -> str:
             if len(encontradas) >= 2:
                 break
 
-    # Se nenhuma keyword especifica encontrada, usar default por loja
+    # Se nenhuma keyword especifica encontrada, usar default por (loja, categoria)
     if not encontradas:
         defaults = {
-            "PPJ": "Minimalista",
-            "iPaper": "Arte Moderna",
-            "AllQuadros": "Minimalista",
-            "DecorKids": "",  # sem default tematico — template self-cleans espaço duplo
+            ("PPJ",        "padrao"):   "Minimalista",
+            ("iPaper",     "padrao"):   "Arte Moderna",
+            ("AllQuadros", "padrao"):   "Minimalista",
+            ("AllQuadros", "infantil"): "",  # sem default — template self-cleans espaço duplo
         }
-        encontradas = [defaults.get(loja, "")]
+        encontradas = [defaults.get((loja, categoria), "")]
 
     return ' '.join(encontradas)
 

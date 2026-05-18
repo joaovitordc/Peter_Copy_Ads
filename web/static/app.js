@@ -1,6 +1,8 @@
 /* ── Estado ────────────────────────────────────────────────────────────── */
 const state = {
   loja:         null,
+  categoria:    null,
+  lojasData:    [],   // [{id, nome, descricao, categoria_default, categorias: [{id, nome}]}]
   modo:         null,
   arquivo:      null,
   jobId:        null,
@@ -11,6 +13,8 @@ const state = {
 const $ = id => document.getElementById(id);
 
 const lojasGrid      = $('lojas-grid');
+const categoriasRow  = $('categorias-row');
+const categoriasGrid = $('categorias-grid');
 const dropzone       = $('dropzone');
 const fileInput      = $('file-input');
 const fileSelected   = $('file-selected');
@@ -56,6 +60,17 @@ const btnDesconto        = $('btn-desconto');
 const descontoStatus     = $('desconto-status');
 const descontoState      = { arquivo: null };
 
+// Banco de SKUs em uso
+const skusEntrySection = $('skus-entry-section');
+const btnAbrirSkus     = $('btn-abrir-skus');
+const skusSection      = $('skus-section');
+const btnFecharSkus    = $('btn-fechar-skus');
+const skusBusca        = $('skus-busca');
+const skusLojasFiltro  = $('skus-lojas-filtro');
+const skusTbody        = $('skus-tbody');
+const skusStatus       = $('skus-status');
+const skusState        = { todos: [], filtroLoja: '', filtroBusca: '' };
+
 /* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   inicializarTema();
@@ -64,28 +79,33 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarDropzone();
   configurarBotoes();
   configurarDesconto();
-  atualizarPainelPreview();
-  atualizarPainelTips();
-  atualizarPainelStatus();
+  configurarSkusViewer();
 });
 
 /* ── Lojas ──────────────────────────────────────────────────────────────── */
 async function carregarLojas() {
+  const FALLBACK = [
+    { id: 'PPJ',        nome: 'PPJ',        descricao: 'Quadros religiosos e minimalistas',
+      categoria_default: 'padrao', categorias: [{ id: 'padrao', nome: 'Padrão' }] },
+    { id: 'iPaper',     nome: 'iPaper',     descricao: 'Arte, Bauhaus e design moderno',
+      categoria_default: 'padrao', categorias: [{ id: 'padrao', nome: 'Padrão' }] },
+    { id: 'AllQuadros', nome: 'AllQuadros', descricao: 'Moderno, minimalista, boho',
+      categoria_default: 'padrao', categorias: [
+        { id: 'padrao',   nome: 'Padrão' },
+        { id: 'infantil', nome: 'Infantil' },
+      ]},
+  ];
   try {
     const res  = await fetch('/api/lojas');
     const data = await res.json();
-    renderizarLojas(data.lojas || []);
+    renderizarLojas(data.lojas && data.lojas.length ? data.lojas : FALLBACK);
   } catch {
-    renderizarLojas([
-      { id: 'PPJ',        nome: 'PPJ',        descricao: 'Quadros religiosos e minimalistas' },
-      { id: 'iPaper',     nome: 'iPaper',     descricao: 'Arte, Bauhaus e design moderno' },
-      { id: 'AllQuadros', nome: 'AllQuadros', descricao: 'Moderno, minimalista, boho' },
-      { id: 'DecorKids',  nome: 'DecorKids',  descricao: 'Quadros para decoração infantil' },
-    ]);
+    renderizarLojas(FALLBACK);
   }
 }
 
 function renderizarLojas(lojas) {
+  state.lojasData = lojas;
   lojasGrid.innerHTML = '';
   lojas.forEach(loja => {
     const card = document.createElement('div');
@@ -113,8 +133,51 @@ function selecionarLoja(id) {
     c.classList.toggle('selecionada', sel);
     c.setAttribute('aria-pressed', String(sel));
   });
+
+  // Renderizar sub-selecao de categoria se a loja tiver >1 categoria.
+  const loja = state.lojasData.find(l => l.id === id);
+  const cats = (loja && loja.categorias) || [];
+  if (cats.length > 1) {
+    state.categoria = loja.categoria_default || cats[0].id;
+    renderizarCategorias(cats);
+    if (categoriasRow) categoriasRow.style.display = '';
+  } else {
+    state.categoria = cats[0] ? cats[0].id : (loja && loja.categoria_default) || 'padrao';
+    if (categoriasGrid) categoriasGrid.innerHTML = '';
+    if (categoriasRow) categoriasRow.style.display = 'none';
+  }
   atualizarBotao();
-  atualizarPainelStatus();
+}
+
+function renderizarCategorias(cats) {
+  if (!categoriasGrid) return;
+  categoriasGrid.innerHTML = '';
+  cats.forEach(cat => {
+    const btn = document.createElement('div');
+    btn.className = 'categoria-card';
+    btn.dataset.id = cat.id;
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('tabindex', '0');
+    btn.setAttribute('aria-pressed', String(cat.id === state.categoria));
+    btn.classList.toggle('selecionada', cat.id === state.categoria);
+    btn.textContent = cat.nome;
+    btn.addEventListener('click', () => selecionarCategoria(cat.id));
+    btn.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selecionarCategoria(cat.id); }
+    });
+    categoriasGrid.appendChild(btn);
+  });
+}
+
+function selecionarCategoria(id) {
+  state.categoria = id;
+  if (categoriasGrid) {
+    categoriasGrid.querySelectorAll('.categoria-card').forEach(c => {
+      const sel = c.dataset.id === id;
+      c.classList.toggle('selecionada', sel);
+      c.setAttribute('aria-pressed', String(sel));
+    });
+  }
 }
 
 /* ── Modos ──────────────────────────────────────────────────────────────── */
@@ -127,8 +190,6 @@ function configurarModos() {
         const inp = card.querySelector('input[name="modo"]');
         card.classList.toggle('selecionado', inp && inp.checked);
       });
-      atualizarPainelPreview();
-      atualizarPainelTips();
     });
   });
 }
@@ -179,7 +240,6 @@ function definirArquivo(file) {
   fileName.textContent = file.name;
   fileSelected.style.display = 'flex';
   atualizarBotao();
-  atualizarPainelStatus();
 }
 
 /* ── Botões ─────────────────────────────────────────────────────────────── */
@@ -210,6 +270,7 @@ async function iniciarProcessamento() {
   formData.append('arquivo', state.arquivo);
   formData.append('loja', state.loja);
   formData.append('modo', state.modo);
+  if (state.categoria) formData.append('categoria', state.categoria);
 
   mostrarSecao('progress');
   atualizarProgresso('Enviando arquivo...', 2);
@@ -260,7 +321,6 @@ function mostrarSecao(secao) {
   resultSection.style.display   = secao === 'result'   ? 'flex'     : 'none';
   errorSection.style.display    = secao === 'error'    ? 'block'    : 'none';
   btnProcessar.style.display    = secao === 'form'     ? 'flex'     : 'none';
-  atualizarPainelStatus(secao);
 }
 
 function atualizarProgresso(mensagem, pct) {
@@ -448,15 +508,20 @@ function baixarArquivo(tipo) {
 
 function resetar() {
   pararPolling();
-  state.loja   = null;
-  state.modo   = null;
-  state.arquivo = null;
-  state.jobId   = null;
+  state.loja      = null;
+  state.categoria = null;
+  state.modo      = null;
+  state.arquivo   = null;
+  state.jobId     = null;
 
   lojasGrid.querySelectorAll('.loja-card').forEach(c => {
     c.classList.remove('selecionada');
     c.setAttribute('aria-pressed', 'false');
   });
+
+  // Esconder/limpar sub-selecao de categoria
+  if (categoriasGrid) categoriasGrid.innerHTML = '';
+  if (categoriasRow) categoriasRow.style.display = 'none';
 
   // Limpar seleção de modo
   document.querySelectorAll('input[name="modo"]').forEach(r => { r.checked = false; });
@@ -467,8 +532,6 @@ function resetar() {
   fileName.textContent       = '';
   atualizarBotao();
   atualizarProgresso('Aguardando início...', 0);
-  atualizarPainelPreview();
-  atualizarPainelTips();
   mostrarSecao('form');
 }
 
@@ -486,108 +549,6 @@ function inicializarTema() {
     const atual = document.documentElement.dataset.theme || 'light';
     aplicarTema(atual === 'dark' ? 'light' : 'dark');
   });
-}
-
-/* ── Painel direito ─────────────────────────────────────────────────────── */
-function atualizarPainelStatus(secao) {
-  const items = document.querySelectorAll('.info-status-item');
-  if (!items.length) return;
-
-  const checks = {
-    loja:       Boolean(state.loja),
-    modo:       Boolean(state.modo),
-    arquivo:    Boolean(state.arquivo),
-    processar:  secao === 'result',
-  };
-
-  // Primeiro passo não-completo é o ativo
-  let ativo = null;
-  if (!checks.loja) ativo = 'loja';
-  else if (!checks.modo) ativo = 'modo';
-  else if (!checks.arquivo) ativo = 'arquivo';
-  else if (secao === 'progress') ativo = 'processar';
-  else if (secao !== 'result') ativo = 'processar';
-
-  items.forEach(item => {
-    const step = item.dataset.step;
-    item.classList.toggle('done', Boolean(checks[step]));
-    item.classList.toggle('active', step === ativo);
-  });
-}
-
-function atualizarPainelPreview() {
-  const el = $('info-preview-content');
-  if (!el) return;
-
-  if (!state.modo) {
-    el.innerHTML = `
-      <p class="info-card-body">
-        Escolha um tipo de planilha no passo 2 para ver o formato esperado.
-      </p>
-    `;
-    return;
-  }
-
-  const isComImagens = state.modo === 'links_com_imagens';
-
-  const headerCells = isComImagens
-    ? ['Qtd', 'Link do anúncio', 'Img 1', 'Img 2', 'Img 3', 'Img 4']
-    : ['Qtd', 'Link Etsy'];
-
-  const sampleRow = isComImagens
-    ? ['1',  'etsy.com/... ou shopee.com.br/...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...', 'i.imgbb...']
-    : ['1',  'etsy.com/listing/...'];
-
-  const cols = isComImagens
-    ? '40px 1fr 60px 60px 60px 60px'
-    : '50px 1fr';
-
-  el.innerHTML = `
-    <div class="info-preview-table" role="presentation">
-      <div class="info-preview-row header" style="grid-template-columns: ${cols}">
-        ${headerCells.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
-      </div>
-      <div class="info-preview-row" style="grid-template-columns: ${cols}">
-        ${sampleRow.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
-      </div>
-      <div class="info-preview-row" style="grid-template-columns: ${cols}">
-        ${sampleRow.map(c => `<div class="info-preview-cell">${c}</div>`).join('')}
-      </div>
-    </div>
-    <p class="info-card-body" style="margin-top: 0.625rem;">
-      ${isComImagens
-        ? 'Cada linha = 1 anúncio. Imagens já pré-selecionadas pelo operador.'
-        : 'Apenas o link — Peter busca título e imagens automaticamente.'}
-    </p>
-  `;
-}
-
-function atualizarPainelTips() {
-  const el = $('info-tips-list');
-  if (!el) return;
-
-  const tipsBase = [
-    'A coluna "Qtd" (1-9) define o tipo do produto. Vazia = detecção automática.',
-    'O modo "Links + Imagens" é mais rápido e estável (sem APIs externas).',
-  ];
-
-  const tipsLinks = [
-    'O modo "Só Links" leva 3-5 min por anúncio (Firecrawl + filtro Gemini).',
-    'Free tier do Firecrawl é 5 chamadas/dia — para volume, faça upgrade.',
-  ];
-
-  const tips = state.modo === 'links' ? tipsLinks : tipsBase;
-
-  el.innerHTML = tips.map(t => `
-    <li class="info-tips-item">
-      <span class="tip-bullet" aria-hidden="true">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="2.5" fill="currentColor"/>
-        </svg>
-      </span>
-      <span>${t}</span>
-    </li>
-  `).join('');
 }
 
 /* ── Card de Desconto (fluxo 2-etapas independente) ─────────────────────── */
@@ -678,4 +639,153 @@ function mostrarStatusDesconto(msg, tipo) {
   if (tipo === 'success') descontoStatus.classList.add('success');
   if (tipo === 'error')   descontoStatus.classList.add('error');
   descontoStatus.style.display = msg ? 'block' : 'none';
+}
+
+/* ── Banco de SKUs em uso ─────────────────────────────────────────────── */
+function configurarSkusViewer() {
+  if (btnAbrirSkus) btnAbrirSkus.addEventListener('click', abrirSkus);
+  if (btnFecharSkus) btnFecharSkus.addEventListener('click', fecharSkus);
+  if (skusBusca) skusBusca.addEventListener('input', () => {
+    skusState.filtroBusca = skusBusca.value.trim().toLowerCase();
+    renderizarSkus();
+  });
+  if (skusLojasFiltro) {
+    skusLojasFiltro.querySelectorAll('.skus-filtro-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        skusLojasFiltro.querySelectorAll('.skus-filtro-pill').forEach(p =>
+          p.classList.remove('selecionada'));
+        pill.classList.add('selecionada');
+        skusState.filtroLoja = pill.dataset.loja || '';
+        renderizarSkus();
+      });
+    });
+  }
+}
+
+function abrirSkus() {
+  // Esconde tudo da home; mostra a tela de SKUs
+  if (formSection)     formSection.style.display = 'none';
+  if (progressSection) progressSection.style.display = 'none';
+  if (resultSection)   resultSection.style.display = 'none';
+  if (errorSection)    errorSection.style.display = 'none';
+  if (btnProcessar)    btnProcessar.style.display = 'none';
+  const desc = $('desconto-section');
+  if (desc) desc.style.display = 'none';
+  if (skusEntrySection) skusEntrySection.style.display = 'none';
+  skusSection.style.display = 'flex';
+  carregarSkus();
+}
+
+function fecharSkus() {
+  skusSection.style.display = 'none';
+  // Reseta a UI pro form inicial
+  if (formSection)     formSection.style.display = 'contents';
+  if (btnProcessar)    btnProcessar.style.display = 'flex';
+  const desc = $('desconto-section');
+  if (desc) desc.style.display = '';
+  if (skusEntrySection) skusEntrySection.style.display = '';
+}
+
+async function carregarSkus() {
+  skusStatus.textContent = 'Carregando…';
+  skusStatus.classList.remove('error');
+  skusTbody.innerHTML = '';
+  try {
+    const res  = await fetch('/api/skus');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erro ao carregar SKUs');
+    skusState.todos = data.skus || [];
+    skusStatus.textContent =
+      `${data.total} SKU${data.total !== 1 ? 's' : ''} • backend: ${data.backend}`;
+    renderizarSkus();
+  } catch (err) {
+    skusState.todos = [];
+    skusStatus.textContent = `Erro: ${err.message || err}`;
+    skusStatus.classList.add('error');
+  }
+}
+
+function skuMatchFiltro(sku) {
+  if (skusState.filtroLoja && !sku.lojas.includes(skusState.filtroLoja)) return false;
+  if (skusState.filtroBusca) {
+    const q = skusState.filtroBusca;
+    const skuCheio = sku.tipo ? `${sku.tipo}_${sku.sku_base}` : sku.sku_base;
+    if (!skuCheio.toLowerCase().includes(q) &&
+        !(sku.display || '').toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+
+function renderizarSkus() {
+  const filtrados = skusState.todos.filter(skuMatchFiltro);
+  skusTbody.innerHTML = '';
+  if (!filtrados.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="6" class="skus-empty">Nenhum SKU corresponde aos filtros.</td>';
+    skusTbody.appendChild(tr);
+    return;
+  }
+  filtrados.forEach(sku => {
+    const tr = document.createElement('tr');
+    tr.dataset.sku = sku.sku_base;
+    const lojasChips = sku.lojas.map(loja => `
+      <span class="loja-chip">
+        ${loja}
+        <button type="button" class="loja-chip-x" data-loja="${loja}"
+                title="Remover apenas '${loja}'">×</button>
+      </span>
+    `).join('');
+    tr.innerHTML = `
+      <td class="sku-base">${sku.tipo ? `${sku.tipo}_${sku.sku_base}` : sku.sku_base}</td>
+      <td>${lojasChips}</td>
+      <td>${sku.tipo}</td>
+      <td>${sku.display || ''}</td>
+      <td class="sku-data">${sku.criado_em || ''}</td>
+      <td>
+        <button type="button" class="btn-link-danger btn-apagar-sku">Apagar</button>
+      </td>
+    `;
+    // Apagar SKU inteiro
+    tr.querySelector('.btn-apagar-sku').addEventListener('click', () =>
+      apagarSku(sku.sku_base));
+    // Remover loja individual
+    tr.querySelectorAll('.loja-chip-x').forEach(btn => {
+      btn.addEventListener('click', () =>
+        removerLojaDoSku(sku.sku_base, btn.dataset.loja));
+    });
+    skusTbody.appendChild(tr);
+  });
+}
+
+async function apagarSku(skuBase) {
+  if (!confirm(`Apagar SKU "${skuBase}" completamente? Isso libera o nome pra reuso.`))
+    return;
+  try {
+    const res = await fetch(`/api/skus/${encodeURIComponent(skuBase)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Falhou');
+    // Remove do estado local sem refazer fetch
+    skusState.todos = skusState.todos.filter(s => s.sku_base !== skuBase);
+    renderizarSkus();
+    skusStatus.textContent = `SKU "${skuBase}" apagado. ${skusState.todos.length} SKUs restantes.`;
+  } catch (err) {
+    alert(`Erro ao apagar: ${err.message || err}`);
+  }
+}
+
+async function removerLojaDoSku(skuBase, loja) {
+  if (!confirm(`Remover apenas "${loja}" do SKU "${skuBase}"? Se for a última loja, o SKU será apagado.`))
+    return;
+  try {
+    const res = await fetch(
+      `/api/skus/${encodeURIComponent(skuBase)}/loja/${encodeURIComponent(loja)}`,
+      { method: 'DELETE' }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Falhou');
+    // Recarrega pra refletir o estado correto (array pode ter ficado vazio ou nao)
+    await carregarSkus();
+  } catch (err) {
+    alert(`Erro: ${err.message || err}`);
+  }
 }
