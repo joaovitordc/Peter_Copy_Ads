@@ -81,6 +81,29 @@ const skusTbody        = $('skus-tbody');
 const skusStatus       = $('skus-status');
 const skusState        = { todos: [], filtroLoja: '', filtroBusca: '', sort: 'criado_desc' };
 
+// Banco Kakashi
+const kakashiEntrySection = $('kakashi-entry-section');
+const btnAbrirKakashi     = $('btn-abrir-kakashi');
+const kakashiSection      = $('kakashi-section');
+const btnFecharKakashi    = $('btn-fechar-kakashi');
+const kakashiBusca        = $('kakashi-busca');
+const kakashiLojasFiltro  = $('kakashi-lojas-filtro');
+const kakashiStatusFiltro = $('kakashi-status-filtro');
+const kakashiSort         = $('kakashi-sort');
+const kakashiTbody        = $('kakashi-tbody');
+const kakashiStatusInfo   = $('kakashi-status-info');
+const kakashiCheckAll     = $('kakashi-check-all');
+const kakashiSelecaoInfo  = $('kakashi-selecao-info');
+const btnBaixarKakashi    = $('btn-baixar-kakashi');
+const kakashiState = {
+  todos: [],
+  filtroLoja: '',
+  filtroBusca: '',
+  filtroStatus: 'pendente',
+  sort: 'criado_desc',
+  selecionados: new Set(),
+};
+
 /* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   inicializarTema();
@@ -90,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarBotoes();
   configurarDesconto();
   configurarSkusViewer();
+  configurarKakashiViewer();
 });
 
 /* ── Lojas ──────────────────────────────────────────────────────────────── */
@@ -954,5 +978,239 @@ async function removerLojaDoSku(skuBase, loja) {
     await carregarSkus();
   } catch (err) {
     alert(`Erro: ${err.message || err}`);
+  }
+}
+
+/* ── Banco Kakashi ────────────────────────────────────────────────────── */
+function configurarKakashiViewer() {
+  if (btnAbrirKakashi)  btnAbrirKakashi.addEventListener('click', abrirKakashi);
+  if (btnFecharKakashi) btnFecharKakashi.addEventListener('click', fecharKakashi);
+  if (kakashiBusca) kakashiBusca.addEventListener('input', () => {
+    kakashiState.filtroBusca = kakashiBusca.value.trim();
+    carregarKakashi();
+  });
+  if (kakashiLojasFiltro) {
+    kakashiLojasFiltro.querySelectorAll('.skus-filtro-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        kakashiLojasFiltro.querySelectorAll('.skus-filtro-pill').forEach(p =>
+          p.classList.remove('selecionada'));
+        pill.classList.add('selecionada');
+        kakashiState.filtroLoja = pill.dataset.loja || '';
+        carregarKakashi();
+      });
+    });
+  }
+  if (kakashiStatusFiltro) {
+    kakashiStatusFiltro.querySelectorAll('.skus-filtro-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        kakashiStatusFiltro.querySelectorAll('.skus-filtro-pill').forEach(p =>
+          p.classList.remove('selecionada'));
+        pill.classList.add('selecionada');
+        kakashiState.filtroStatus = pill.dataset.status || 'pendente';
+        carregarKakashi();
+      });
+    });
+  }
+  if (kakashiSort) {
+    kakashiSort.addEventListener('change', () => {
+      kakashiState.sort = kakashiSort.value || 'criado_desc';
+      carregarKakashi();
+    });
+  }
+  if (kakashiCheckAll) {
+    kakashiCheckAll.addEventListener('change', () => {
+      const marcar = kakashiCheckAll.checked;
+      kakashiState.todos.forEach(a => {
+        if (marcar) kakashiState.selecionados.add(a.sku_base);
+        else kakashiState.selecionados.delete(a.sku_base);
+      });
+      // Atualiza checkboxes do DOM sem refazer fetch
+      kakashiTbody.querySelectorAll('input[type="checkbox"][data-sku]').forEach(c => {
+        c.checked = marcar;
+        c.closest('tr')?.classList.toggle('selecionada', marcar);
+      });
+      atualizarSelecaoKakashi();
+    });
+  }
+  if (btnBaixarKakashi) btnBaixarKakashi.addEventListener('click', baixarKakashiSelecionados);
+}
+
+function abrirKakashi() {
+  if (formSection)     formSection.style.display = 'none';
+  if (progressSection) progressSection.style.display = 'none';
+  if (resultSection)   resultSection.style.display = 'none';
+  if (errorSection)    errorSection.style.display = 'none';
+  if (btnProcessar)    btnProcessar.style.display = 'none';
+  const desc = $('desconto-section');
+  if (desc) desc.style.display = 'none';
+  if (skusEntrySection)    skusEntrySection.style.display = 'none';
+  if (kakashiEntrySection) kakashiEntrySection.style.display = 'none';
+  kakashiSection.style.display = 'flex';
+  carregarKakashi();
+}
+
+function fecharKakashi() {
+  kakashiSection.style.display = 'none';
+  if (formSection)     formSection.style.display = 'contents';
+  if (btnProcessar)    btnProcessar.style.display = 'flex';
+  const desc = $('desconto-section');
+  if (desc) desc.style.display = '';
+  if (skusEntrySection)    skusEntrySection.style.display = '';
+  if (kakashiEntrySection) kakashiEntrySection.style.display = '';
+}
+
+async function carregarKakashi() {
+  kakashiStatusInfo.textContent = 'Carregando…';
+  kakashiStatusInfo.classList.remove('error');
+  kakashiTbody.innerHTML = '';
+  if (kakashiCheckAll) kakashiCheckAll.checked = false;
+  try {
+    const params = new URLSearchParams({
+      sort:   kakashiState.sort || 'criado_desc',
+      status: kakashiState.filtroStatus || 'pendente',
+    });
+    if (kakashiState.filtroLoja)  params.set('loja', kakashiState.filtroLoja);
+    if (kakashiState.filtroBusca) params.set('q', kakashiState.filtroBusca);
+    const res  = await fetch(`/api/kakashi?${params}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erro ao carregar artes Kakashi');
+    kakashiState.todos = data.artes || [];
+    kakashiStatusInfo.textContent =
+      `${data.total} arte${data.total !== 1 ? 's' : ''} • backend: ${data.backend} • filtro: ${data.status}`;
+    renderizarKakashi();
+  } catch (err) {
+    kakashiState.todos = [];
+    kakashiStatusInfo.textContent = `Erro: ${err.message || err}`;
+    kakashiStatusInfo.classList.add('error');
+    atualizarSelecaoKakashi();
+  }
+}
+
+function renderizarKakashi() {
+  kakashiTbody.innerHTML = '';
+  if (!kakashiState.todos.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="8" class="skus-empty">Nenhuma arte corresponde aos filtros.</td>';
+    kakashiTbody.appendChild(tr);
+    atualizarSelecaoKakashi();
+    return;
+  }
+  kakashiState.todos.forEach(arte => {
+    const tr = document.createElement('tr');
+    tr.dataset.sku = arte.sku_base;
+    const selecionado = kakashiState.selecionados.has(arte.sku_base);
+    if (selecionado) tr.classList.add('selecionada');
+    const enviado = !!arte.enviado_kakashi_em;
+    const statusHtml = enviado
+      ? `<span class="kakashi-badge kakashi-badge-enviado" title="Clique pra reverter">Enviado ${arte.enviado_kakashi_em}</span>`
+      : `<span class="kakashi-badge kakashi-badge-pendente" title="Clique pra marcar como enviado">Pendente</span>`;
+    tr.innerHTML = `
+      <td><input type="checkbox" data-sku="${arte.sku_base}" ${selecionado ? 'checked' : ''}></td>
+      <td><img class="kakashi-thumb" src="${arte.imagem_capa}" alt="" loading="lazy"
+              onerror="this.style.background='#fee'"></td>
+      <td class="sku-base">${arte.sku_completo || arte.sku_base}</td>
+      <td>${arte.descricao || ''}</td>
+      <td>${arte.loja || ''}</td>
+      <td class="sku-data">${arte.criado_em || ''}</td>
+      <td>${statusHtml}</td>
+      <td><button type="button" class="btn-link-danger btn-apagar-kakashi">Apagar</button></td>
+    `;
+    // Checkbox
+    tr.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+      const sku = arte.sku_base;
+      if (e.target.checked) {
+        kakashiState.selecionados.add(sku);
+        tr.classList.add('selecionada');
+      } else {
+        kakashiState.selecionados.delete(sku);
+        tr.classList.remove('selecionada');
+      }
+      atualizarSelecaoKakashi();
+    });
+    // Toggle status (clica no badge)
+    tr.querySelector('.kakashi-badge').addEventListener('click', () =>
+      toggleStatusKakashi(arte.sku_base, !enviado));
+    // Apagar
+    tr.querySelector('.btn-apagar-kakashi').addEventListener('click', () =>
+      apagarKakashi(arte.sku_base));
+    kakashiTbody.appendChild(tr);
+  });
+  atualizarSelecaoKakashi();
+}
+
+function atualizarSelecaoKakashi() {
+  const n = kakashiState.selecionados.size;
+  if (kakashiSelecaoInfo) {
+    kakashiSelecaoInfo.textContent = `${n} selecionado${n !== 1 ? 's' : ''}`;
+  }
+  if (btnBaixarKakashi) {
+    btnBaixarKakashi.disabled = (n === 0);
+    btnBaixarKakashi.textContent = `Baixar planilha (${n})`;
+  }
+}
+
+async function toggleStatusKakashi(skuBase, enviado) {
+  try {
+    const res = await fetch(`/api/kakashi/${encodeURIComponent(skuBase)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enviado }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Falhou');
+    await carregarKakashi();
+  } catch (err) {
+    alert(`Erro ao atualizar status: ${err.message || err}`);
+  }
+}
+
+async function apagarKakashi(skuBase) {
+  if (!confirm(`Apagar a arte "${skuBase}" do banco Kakashi? (não afeta o banco de SKUs nem a Shopee)`))
+    return;
+  try {
+    const res = await fetch(`/api/kakashi/${encodeURIComponent(skuBase)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Falhou');
+    kakashiState.selecionados.delete(skuBase);
+    await carregarKakashi();
+  } catch (err) {
+    alert(`Erro ao apagar: ${err.message || err}`);
+  }
+}
+
+async function baixarKakashiSelecionados() {
+  if (kakashiState.selecionados.size === 0) return;
+  const skus = [...kakashiState.selecionados];
+  const labelOriginal = btnBaixarKakashi.textContent;
+  btnBaixarKakashi.disabled = true;
+  btnBaixarKakashi.textContent = 'Baixando…';
+  try {
+    const res = await fetch('/api/kakashi/baixar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku_bases: skus }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dispo = res.headers.get('Content-Disposition') || '';
+    const m = dispo.match(/filename="([^"]+)"/);
+    a.download = m ? m[1] : 'kakashi_selecao.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    // Limpa selecao e re-fetch (artes agora viraram 'enviado')
+    kakashiState.selecionados.clear();
+    await carregarKakashi();
+  } catch (err) {
+    alert(`Erro ao baixar: ${err.message || err}`);
+    btnBaixarKakashi.disabled = false;
+    btnBaixarKakashi.textContent = labelOriginal;
   }
 }

@@ -654,6 +654,163 @@ async def deletar_sku_loja(sku_base: str, loja: str):
     return {"sku_base": sku_base, "loja": loja, "removido": True}
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Banco Kakashi — artes pra gerar PDFs sob demanda
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/kakashi")
+async def listar_kakashi(loja: str = "", q: str = "", status: str = "todos",
+                          sort: str = "criado_desc"):
+    """Lista artes do banco peter_kakashi_artes com filtros.
+
+    Query params:
+      loja   — filtra por loja (PPJ, iPaper, AllQuadros) ou vazio = todas
+      q      — busca substring em sku_base / sku_completo / descricao
+      status — 'todos' (default) | 'pendente' | 'enviado'
+      sort   — criado_desc (default) | criado_asc | sku_asc | sku_desc
+    """
+    if status not in ("todos", "pendente", "enviado"):
+        raise HTTPException(400, detail="status invalido. Use: todos | pendente | enviado")
+    if sort not in ("criado_desc", "criado_asc", "sku_asc", "sku_desc"):
+        raise HTTPException(400, detail="sort invalido")
+
+    import kakashi_storage as _kak
+    try:
+        artes = _kak.carregar(loja=loja, q=q, status=status, sort=sort)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao carregar artes Kakashi: {e}")
+
+    return {
+        "backend": _kak.info(),
+        "total":   len(artes),
+        "artes":   artes,
+        "sort":    sort,
+        "status":  status,
+    }
+
+
+@app.post("/api/kakashi/baixar")
+async def baixar_kakashi(payload: dict):
+    """Gera planilha Kakashi seletiva com os SKUs informados e marca como
+    enviado (auto-update enviado_kakashi_em = hoje).
+
+    Body: { "sku_bases": ["AnimaisFofos", "Salmo23", ...] }
+
+    Retorna XLSX como StreamingResponse pra download imediato.
+    """
+    sku_bases = payload.get("sku_bases") or []
+    if not isinstance(sku_bases, list) or not sku_bases:
+        raise HTTPException(400, detail="sku_bases deve ser lista nao vazia")
+
+    import kakashi_storage as _kak
+    # Carrega todas as artes pra filtrar pelas selecionadas (mais robusto que
+    # 1 fetch por SKU — N requests vira 1)
+    try:
+        todas = _kak.carregar()  # sem filtros — carga completa
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao carregar artes: {e}")
+
+    selecionadas_set = set(sku_bases)
+    selecionadas = [a for a in todas if a.get("sku_base") in selecionadas_set]
+    if not selecionadas:
+        raise HTTPException(404, detail="Nenhum SKU encontrado pra esses sku_bases.")
+
+    # Gera XLSX em memoria a partir do template oficial
+    import io
+    import openpyxl
+    import shutil
+    import tempfile
+    from datetime import date as _date
+
+    template_path = BASE_DIR / "planilhas_padrao" / "kakashi_art_generator.xlsx"
+    if not template_path.exists():
+        raise HTTPException(500, detail=f"Template Kakashi nao encontrado em {template_path}")
+
+    # Como o template tem formatacao, faz copy + load + edit (mesma estrategia
+    # do scripts/export_kakashi.py). Usa tempfile pra nao poluir o repo.
+    with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+        shutil.copy2(template_path, tmp.name)
+        tmp_path = tmp.name
+
+    try:
+        wb = openpyxl.load_workbook(tmp_path)
+        ws = wb["Planilha1"]
+        # Mantem a mesma ordem que veio do front (preserva ordem da selecao)
+        ordem = {sku: i for i, sku in enumerate(sku_bases)}
+        selecionadas.sort(key=lambda a: ordem.get(a.get("sku_base"), 9999))
+        linha = 2
+        for arte in selecionadas:
+            ws.cell(row=linha, column=1, value=arte.get("sku_completo", ""))
+            ws.cell(row=linha, column=2, value=arte.get("descricao", ""))
+            ws.cell(row=linha, column=3, value=arte.get("imagem_capa", ""))
+            linha += 1
+        wb.save(tmp_path)
+
+        with open(tmp_path, "rb") as f:
+            conteudo = f.read()
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+    # Marca como enviado (so as que realmente entraram no XLSX)
+    sku_bases_baixados = [a["sku_base"] for a in selecionadas]
+    try:
+        _kak.marcar_enviado(sku_bases_baixados)
+    except Exception as e:
+        print(f"[AVISO] Falha ao marcar enviados: {e}", file=sys.stderr)
+
+    hoje = _date.today().strftime("%Y-%m-%d")
+    nome_arquivo = f"kakashi_selecao_{hoje}.xlsx"
+    return StreamingResponse(
+        io.BytesIO(conteudo),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
+    )
+
+
+@app.patch("/api/kakashi/{sku_base}")
+async def atualizar_kakashi(sku_base: str, payload: dict):
+    """Toggle do status enviado de uma arte.
+
+    Body: { "enviado": true | false }
+      true  -> marcar_enviado([sku_base]) — preenche enviado_kakashi_em = hoje
+      false -> desmarcar(sku_base) — volta pra NULL (Pendente)
+    """
+    if not sku_base:
+        raise HTTPException(400, detail="sku_base obrigatorio")
+    enviado = payload.get("enviado")
+    if not isinstance(enviado, bool):
+        raise HTTPException(400, detail="enviado deve ser boolean")
+
+    import kakashi_storage as _kak
+    try:
+        if enviado:
+            n = _kak.marcar_enviado([sku_base])
+            return {"sku_base": sku_base, "enviado": True, "atualizados": n}
+        ok = _kak.desmarcar(sku_base)
+        return {"sku_base": sku_base, "enviado": False, "atualizado": ok}
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao atualizar: {e}")
+
+
+@app.delete("/api/kakashi/{sku_base}")
+async def deletar_kakashi(sku_base: str):
+    """Remove uma arte do banco Kakashi (linha deletada). Nao afeta o
+    peter_skus_em_uso — sao bancos independentes."""
+    if not sku_base:
+        raise HTTPException(400, detail="sku_base obrigatorio")
+    import kakashi_storage as _kak
+    try:
+        ok = _kak.liberar(sku_base)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erro ao apagar: {e}")
+    if not ok:
+        raise HTTPException(404, detail=f"Arte '{sku_base}' nao encontrada.")
+    return {"sku_base": sku_base, "removido": True}
+
+
 @app.get("/api/modelo/{tipo}")
 async def modelo(tipo: str):
     """

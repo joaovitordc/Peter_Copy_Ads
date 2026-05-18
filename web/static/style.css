@@ -1224,3 +1224,68 @@ body::before {
   background: rgba(220, 38, 38, 0.1);
   border-color: var(--danger);
 }
+
+/* ── Banco Kakashi ────────────────────────────────────────────────────── */
+.kakashi-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--glass-bg-2);
+  display: block;
+}
+.kakashi-badge {
+  display: inline-block;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.kakashi-badge-pendente {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.kakashi-badge-pendente:hover { background: rgba(245, 158, 11, 0.25); }
+.kakashi-badge-enviado {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.kakashi-badge-enviado:hover { background: rgba(16, 185, 129, 0.25); }
+.skus-tabela tbody tr.selecionada {
+  background: var(--accent-soft);
+}
+.kakashi-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--hairline);
+  flex-wrap: wrap;
+}
+.kakashi-selecao-info {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.btn-apagar-kakashi { /* alias: usa estilo do btn-link-danger */ }
+/* Header da tabela kakashi precisa de checkbox padronizado */
+#kakashi-tabela thead th:first-child,
+#kakashi-tabela tbody td:first-child {
+  width: 36px;
+  text-align: center;
+}
+#kakashi-tabela input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}

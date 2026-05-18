@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peter, The Ads Copier</title>
-  <link rel="stylesheet" href="/static/style.css?v=20260518f" />
+  <link rel="stylesheet" href="/static/style.css?v=20260518g" />
   <!-- Cropper.js — biblioteca pra ajustar enquadramento da capa antes de gerar planilhas -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script>
@@ -437,6 +437,84 @@
           </div>
         </div>
 
+        <!-- ── Banco Kakashi (artes pra gerar PDFs sob demanda) ── -->
+        <div class="glass-card skus-entry-card" id="kakashi-entry-section" style="margin-top: 1.5rem">
+          <div class="desconto-header">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4M3 17l9 4 9-4"
+                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h2 class="desconto-title">Banco de artes Kakashi</h2>
+          </div>
+          <p class="desconto-desc">
+            Artes geradas pelo Peter. Selecione as que vendeu pra baixar
+            planilha do Kakashi e gerar os PDFs sob demanda.
+          </p>
+          <button type="button" class="btn-primary" id="btn-abrir-kakashi">
+            Abrir banco Kakashi
+          </button>
+        </div>
+
+        <!-- ── Tela do banco Kakashi (oculta por default) ── -->
+        <div class="glass-card skus-section" id="kakashi-section" style="display:none">
+          <div class="skus-header">
+            <h2 class="section-title" style="margin: 0">
+              <span class="step-badge">PDFs</span>
+              Banco de artes Kakashi
+            </h2>
+            <button type="button" class="btn-secondary" id="btn-fechar-kakashi">Fechar</button>
+          </div>
+
+          <div class="skus-filtros">
+            <input type="search" class="skus-busca" id="kakashi-busca"
+                   placeholder="Buscar por SKU, descrição…" autocomplete="off">
+            <div class="skus-lojas-filtro" id="kakashi-lojas-filtro">
+              <button type="button" class="skus-filtro-pill selecionada" data-loja="">Todas</button>
+              <button type="button" class="skus-filtro-pill" data-loja="PPJ">PPJ</button>
+              <button type="button" class="skus-filtro-pill" data-loja="iPaper">iPaper</button>
+              <button type="button" class="skus-filtro-pill" data-loja="AllQuadros">AllQuadros</button>
+            </div>
+            <div class="skus-lojas-filtro" id="kakashi-status-filtro">
+              <button type="button" class="skus-filtro-pill selecionada" data-status="pendente">Pendentes</button>
+              <button type="button" class="skus-filtro-pill" data-status="enviado">Enviados</button>
+              <button type="button" class="skus-filtro-pill" data-status="todos">Todos</button>
+            </div>
+            <select class="skus-sort" id="kakashi-sort" aria-label="Ordenação">
+              <option value="criado_desc">Mais recentes primeiro</option>
+              <option value="criado_asc">Mais antigos primeiro</option>
+              <option value="sku_asc">SKU (A → Z)</option>
+              <option value="sku_desc">SKU (Z → A)</option>
+            </select>
+          </div>
+
+          <p class="skus-status" id="kakashi-status-info">Carregando…</p>
+
+          <div class="skus-tabela-wrap">
+            <table class="skus-tabela" id="kakashi-tabela">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="kakashi-check-all" aria-label="Selecionar todos"></th>
+                  <th>Capa</th>
+                  <th>SKU</th>
+                  <th>Descrição</th>
+                  <th>Loja</th>
+                  <th>Criado</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="kakashi-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="kakashi-footer">
+            <span class="kakashi-selecao-info" id="kakashi-selecao-info">0 selecionado(s)</span>
+            <button type="button" class="btn-primary" id="btn-baixar-kakashi" disabled>
+              Baixar planilha (0)
+            </button>
+          </div>
+        </div>
+
       </main>
 
     </div>
@@ -471,6 +549,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-  <script src="/static/app.js?v=20260518f"></script>
+  <script src="/static/app.js?v=20260518g"></script>
 </body>
 </html>

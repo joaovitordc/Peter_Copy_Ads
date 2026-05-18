@@ -81,6 +81,15 @@ def gerar_kakashi(input_json: dict, output_dir: str) -> tuple[str, list[str]]:
     wb = openpyxl.load_workbook(caminho)
     ws = wb["Planilha1"]
 
+    # Persiste tambem no banco peter_kakashi_artes (Supabase) — operador depois
+    # baixa planilhas seletivas pela tela "Banco Kakashi" do frontend, com
+    # so as artes que venderam. Import lazy pra nao quebrar o pipeline se o
+    # modulo ou env vars estiverem ausentes.
+    try:
+        import kakashi_storage as _kak
+    except ImportError:
+        _kak = None
+
     linha = 2
     for produto in produtos:
         nome_sku = produto.get("nome_arte_sku", "")
@@ -98,13 +107,27 @@ def gerar_kakashi(input_json: dict, output_dir: str) -> tuple[str, list[str]]:
             )
             continue
 
-        sku_base = f"{tipo}_{nome_sku}"
+        sku_completo = f"{tipo}_{nome_sku}"
         tipo_nome = TIPO_NOME.get(tipo, tipo)
         desc_pai = f"{tipo_nome} - {prefixo}{nome_display}"
-        ws.cell(row=linha, column=1, value=sku_base)
+        ws.cell(row=linha, column=1, value=sku_completo)
         ws.cell(row=linha, column=2, value=desc_pai)
         ws.cell(row=linha, column=3, value=imagem_capa)
         linha += 1
+
+        # Persistencia no banco (best-effort — falha vira aviso, nao bloqueia)
+        if _kak is not None:
+            try:
+                _kak.salvar_arte(nome_sku, {
+                    "sku_completo": sku_completo,
+                    "tipo":         tipo,
+                    "descricao":    desc_pai,
+                    "imagem_capa":  imagem_capa,
+                    "loja":         loja,
+                    "categoria":    categoria,
+                })
+            except Exception as e:
+                avisos.append(f"Kakashi banco: falha ao salvar {nome_sku}: {e}")
 
     wb.save(caminho)
 

@@ -27,6 +27,39 @@ no mesmo `output_dir` do job:
 Uso: o usuario clica em "Planilha Kakashi" no card de resultado do frontend, baixa o XLSX
 e faz upload no sistema Kakashi.
 
+### Banco de artes Kakashi (peter_kakashi_artes — 2026-05-18)
+
+Alem do XLSX por lote, cada arte gerada eh persistida no Supabase na tabela
+`peter_kakashi_artes` (DDL em [scripts/supabase_schema.sql](../scripts/supabase_schema.sql)).
+Permite que o operador escolha artes pontuais pra baixar planilha seletiva
+e gerar PDFs **sob demanda** (depois que a arte vende — em vez de gerar PDF
+de todas do lote desnecessariamente).
+
+**Schema:** `sku_base PK + sku_completo + tipo + descricao + imagem_capa +
+loja + categoria + criado_em + enviado_kakashi_em`. PK simples (1 arte = 1
+PDF, mesmo se cadastrada em 2+ lojas — last-write-wins na descricao).
+
+**Modulo:** [scripts/kakashi_storage.py](../scripts/kakashi_storage.py) —
+espelha o padrao de `sku_storage.py` (Supabase via PostgREST + local JSON
+fallback).
+
+**Endpoints:**
+- `GET /api/kakashi?loja=&q=&status=&sort=` — lista filtrada
+- `POST /api/kakashi/baixar {sku_bases:[...]}` — gera XLSX seletivo + marca
+  como enviado (`enviado_kakashi_em = hoje`)
+- `PATCH /api/kakashi/{sku_base} {enviado:bool}` — toggle status manual
+- `DELETE /api/kakashi/{sku_base}` — remove do banco
+
+**Frontend:** card "Banco de artes Kakashi" abaixo do "Banco de SKUs".
+Tabela com checkbox + thumb capa + filtros (loja, status, busca) + dropdown
+sort. Botao "Baixar planilha (N)" baixa XLSX + auto-marca como enviado.
+Filtro padrao = `pendente` (artes que ainda nao foram pro Kakashi).
+
+**Comportamento de descarte:** SKUs marcados como "Descartar" na revisao
+de capas (fase 2 do pipeline) **nao entram** no banco Kakashi — o
+`gerar_kakashi` so roda na fase 2 com input_json ja filtrado. Comportamento
+natural sem codigo especial.
+
 ### Sincronizacao de descricao com ERP
 
 A descricao gerada para o Kakashi (coluna B) usa o **mesmo formato** da
