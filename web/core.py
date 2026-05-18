@@ -670,4 +670,5 @@ def processar(
         "produtos":        len(produtos_ok),
         "rejeitados":      len(produtos_rejeitados),
         "avisos":          avisos,
+        "input_json":      input_json,  # snapshot pra regenerar via /api/descartar
     }

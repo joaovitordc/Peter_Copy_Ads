@@ -206,6 +206,24 @@
             </div>
           </div>
 
+          <!-- ── Revisar capas (marcar produtos com capa cortada pra descartar) ── -->
+          <div class="review-section" id="review-section" style="display:none">
+            <div class="review-header">
+              <h4 class="review-title">Revisar capas antes de baixar</h4>
+              <p class="review-hint">
+                Marque <strong>"Descartar"</strong> nos produtos com capa cortada/ruim.
+                Ao confirmar, as planilhas são regeneradas sem eles e os SKUs ficam liberados pra reuso.
+              </p>
+            </div>
+            <div class="review-grid" id="review-grid"></div>
+            <div class="review-actions">
+              <span class="review-status" id="review-status">Nenhum descarte marcado</span>
+              <button type="button" class="btn-primary btn-descartar" id="btn-descartar" disabled>
+                Aplicar descarte e regenerar
+              </button>
+            </div>
+          </div>
+
           <div class="downloads-grid">
             <button class="download-card" id="btn-download-shopee" type="button" data-type="shopee">
               <div class="download-icon" aria-hidden="true">

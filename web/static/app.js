@@ -34,6 +34,13 @@ const btnDownloadErp        = $('btn-download-erp');
 const btnDownloadKakashi    = $('btn-download-kakashi');
 const btnDownloadRejeitados = $('btn-download-rejeitados');
 const downloadRejeitadosHint= $('download-rejeitados-hint');
+
+// Revisão de capas (Opção A — thumbnails + descarte)
+const reviewSection = $('review-section');
+const reviewGrid    = $('review-grid');
+const reviewStatus  = $('review-status');
+const btnDescartar  = $('btn-descartar');
+const descartadosSet = new Set();  // SKUs base marcados pra descartar
 const avisosBox         = $('avisos-box');
 const avisosLista       = $('avisos-lista');
 const btnNovaPlanilha   = $('btn-nova-planilha');
@@ -299,6 +306,112 @@ function mostrarResultado(data) {
   }
 
   mostrarSecao('result');
+
+  // Carrega thumbnails de capa pra revisão (Opção A)
+  if (state.jobId) carregarRevisaoCapas(state.jobId);
+}
+
+/* ── Revisão de capas (Opção A — thumbnails + descarte) ────────────────── */
+async function carregarRevisaoCapas(jobId) {
+  if (!reviewSection || !reviewGrid) return;
+  try {
+    const res = await fetch(`/api/produtos/${jobId}`);
+    if (!res.ok) { reviewSection.style.display = 'none'; return; }
+    const data = await res.json();
+    if (!data.suporte_descarte || !data.produtos?.length) {
+      reviewSection.style.display = 'none';
+      return;
+    }
+    renderizarRevisao(data.produtos);
+    reviewSection.style.display = '';
+  } catch {
+    reviewSection.style.display = 'none';
+  }
+}
+
+function renderizarRevisao(produtos) {
+  reviewGrid.innerHTML = '';
+  descartadosSet.clear();
+
+  produtos.forEach(p => {
+    const item = document.createElement('label');
+    item.className = 'review-item';
+    item.dataset.sku = p.sku_base;
+    item.innerHTML = `
+      <input type="checkbox" aria-label="Descartar ${p.sku_completo}">
+      <img src="${p.imagem_capa}" alt="Capa ${p.display}" loading="lazy"
+           onerror="this.style.background='#fee'; this.alt='Capa não carregou'">
+      <div class="review-info">
+        <span class="review-sku">${p.sku_completo}</span>
+        <span class="review-display">${p.display}</span>
+      </div>
+    `;
+    const chk = item.querySelector('input');
+    chk.addEventListener('change', () => {
+      if (chk.checked) {
+        descartadosSet.add(p.sku_base);
+        item.classList.add('descartar');
+      } else {
+        descartadosSet.delete(p.sku_base);
+        item.classList.remove('descartar');
+      }
+      atualizarBotaoDescartar();
+    });
+    reviewGrid.appendChild(item);
+  });
+  atualizarBotaoDescartar();
+
+  if (btnDescartar && !btnDescartar.dataset.bound) {
+    btnDescartar.addEventListener('click', aplicarDescarte);
+    btnDescartar.dataset.bound = '1';
+  }
+}
+
+function atualizarBotaoDescartar() {
+  const n = descartadosSet.size;
+  if (btnDescartar) btnDescartar.disabled = (n === 0);
+  if (reviewStatus) {
+    reviewStatus.textContent = n === 0
+      ? 'Nenhum descarte marcado'
+      : `${n} produto${n !== 1 ? 's' : ''} marcado${n !== 1 ? 's' : ''} pra descarte`;
+  }
+}
+
+async function aplicarDescarte() {
+  if (!state.jobId || descartadosSet.size === 0) return;
+  const skus = [...descartadosSet];
+  if (!confirm(`Confirma descartar ${skus.length} produto(s)? As planilhas serão regeneradas sem eles e os SKUs ficarão liberados pra reuso.`)) return;
+
+  btnDescartar.disabled = true;
+  const labelOriginal = btnDescartar.textContent;
+  btnDescartar.textContent = 'Regenerando...';
+
+  try {
+    const res = await fetch('/api/descartar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: state.jobId, skus_base: skus }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`Erro: ${data.detail || 'desconhecido'}`);
+      btnDescartar.disabled = false;
+      btnDescartar.textContent = labelOriginal;
+      return;
+    }
+    // Sucesso — recarrega o grid sem os descartados + atualiza subtitle
+    alert(data.mensagem || 'Descarte aplicado.');
+    if (resultSubtitle) {
+      resultSubtitle.textContent = `${data.produtos_ativos} produtos ativos (${data.descartados} descartados nesta sessão).`;
+    }
+    carregarRevisaoCapas(state.jobId);  // re-renderiza o grid (sem descartados)
+  } catch (err) {
+    alert(`Erro de rede: ${err.message || err}`);
+    btnDescartar.disabled = false;
+    btnDescartar.textContent = labelOriginal;
+  } finally {
+    btnDescartar.textContent = labelOriginal;
+  }
 }
 
 function mostrarErro(msg, avisos) {

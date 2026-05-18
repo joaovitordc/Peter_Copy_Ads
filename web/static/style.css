@@ -690,6 +690,111 @@ body::before {
 .download-card.download-card-warn { border-color: rgba(220, 38, 38, 0.35); }
 .download-card.download-card-warn:hover { border-color: #dc2626; }
 
+/* ── Revisar capas (seção entre header e downloads no card de resultado) ─── */
+.review-section {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.review-header { margin-bottom: 0.75rem; }
+.review-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+.review-hint {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+.review-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color 0.15s, opacity 0.15s;
+  cursor: pointer;
+}
+.review-item:hover { border-color: var(--accent); }
+.review-item.descartar {
+  border-color: #dc2626;
+  opacity: 0.55;
+}
+.review-item.descartar::after {
+  content: "DESCARTAR";
+  position: absolute;
+  top: 8px; right: 8px;
+  background: #dc2626;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.review-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #f3f4f6;
+  display: block;
+}
+.review-item .review-info {
+  padding: 0.5rem 0.6rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.review-item .review-sku {
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+.review-item .review-display {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.review-item input[type="checkbox"] {
+  position: absolute;
+  top: 8px; left: 8px;
+  width: 18px; height: 18px;
+  cursor: pointer;
+  accent-color: #dc2626;
+}
+.review-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.review-status {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.btn-descartar:disabled {
+  background: var(--border);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
 .download-info { flex: 1; display: flex; flex-direction: column; gap: 0.125rem; }
 .download-label { font-size: 0.9375rem; font-weight: 600; color: var(--text); }
 .download-hint { font-size: 0.75rem; color: var(--text-2); }
