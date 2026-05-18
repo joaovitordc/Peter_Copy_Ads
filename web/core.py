@@ -9,7 +9,6 @@ import os
 import sys
 import re
 import json
-import time
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlparse, unquote
@@ -555,8 +554,10 @@ def processar(
         produto["imagem_2"]    = urls_imgbb[2] or urls_imgbb[0] or ""
         produto["imagem_3"]    = urls_imgbb[3] or urls_imgbb[0] or ""
 
-        if i < total_p - 1:
-            time.sleep(0.5)
+        # delay entre produtos removido — upload_imagens ja paraleliza com
+        # 4 workers; throttle inter-produto era margem extra pra rate-limit
+        # ImgBB que se mostrou desnecessaria na pratica (operador estava
+        # estourando 5min timeout do Vercel Hobby plan).
 
     # ── Etapa 5: Montar JSON intermediario ────────────────────────────────
     progresso("Montando dados dos produtos...", 82)

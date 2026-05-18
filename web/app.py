@@ -70,6 +70,69 @@ class JobState:
 jobs: dict[str, JobState] = {}
 
 
+def _state_path(job_id: str) -> Path:
+    """Caminho do arquivo de estado persistido pra recuperar entre warm starts
+    do mesmo container Lambda. NAO resolve multi-container — pra isso seria
+    necessario Vercel Blob/KV (follow-up)."""
+    return JOBS_DIR / job_id / "_state.json"
+
+
+def _salvar_estado(job: JobState) -> None:
+    """Persiste JobState como JSON. Idempotente, chamado a cada atualizacao.
+
+    Em Vercel: /tmp/jobs/<id>/_state.json (sobrevive warm starts no mesmo container).
+    Em local: web/jobs/<id>/_state.json.
+    """
+    try:
+        path = _state_path(job.job_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({
+                "job_id":       job.job_id,
+                "status":       job.status,
+                "mensagem":     job.mensagem,
+                "percent":      job.percent,
+                "shopee_path":  job.shopee_path,
+                "erp_path":     job.erp_path,
+                "kakashi_path": job.kakashi_path,
+                "produtos":     job.produtos,
+                "avisos":       job.avisos,
+                "erro":         job.erro,
+                "criado_em":    job.criado_em.isoformat(),
+            }, f, ensure_ascii=False)
+    except Exception as e:
+        # Persistencia e best-effort — falha aqui nao pode quebrar o pipeline
+        print(f"[AVISO] Falha ao persistir JobState {job.job_id}: {e}", file=sys.stderr)
+
+
+def _carregar_estado(job_id: str) -> Optional[JobState]:
+    """Recupera JobState do disco quando nao esta em memoria (cold start no
+    mesmo container, ou simplesmente outra requisicao). Retorna None se nao
+    existir ou estiver corrompido."""
+    try:
+        path = _state_path(job_id)
+        if not path.exists():
+            return None
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+        return JobState(
+            job_id=d["job_id"],
+            status=d.get("status", "aguardando"),
+            mensagem=d.get("mensagem", ""),
+            percent=d.get("percent", 0),
+            shopee_path=d.get("shopee_path"),
+            erp_path=d.get("erp_path"),
+            kakashi_path=d.get("kakashi_path"),
+            produtos=d.get("produtos", 0),
+            avisos=d.get("avisos", []),
+            erro=d.get("erro"),
+            criado_em=datetime.fromisoformat(d["criado_em"]) if d.get("criado_em") else datetime.now(),
+        )
+    except Exception as e:
+        print(f"[AVISO] Falha ao carregar JobState {job_id}: {e}", file=sys.stderr)
+        return None
+
+
 def _limpar_jobs_antigos():
     limite = datetime.now() - timedelta(hours=2)
     para_remover = [jid for jid, j in jobs.items() if j.criado_em < limite]
@@ -131,6 +194,7 @@ async def processar(
         f.write(conteudo)
 
     jobs[job_id] = JobState(job_id=job_id)
+    _salvar_estado(jobs[job_id])  # persistencia imediata pra polling pegar mesmo em outra request
     background_tasks.add_task(_executar_pipeline, job_id, str(input_path), loja, modo, str(job_dir))
     _limpar_jobs_antigos()
 
@@ -145,11 +209,13 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
         return
 
     job.status = "processando"
+    _salvar_estado(job)
 
     def progresso(msg: str, pct: int):
         if job_id in jobs:
             jobs[job_id].mensagem = msg
             jobs[job_id].percent = pct
+            _salvar_estado(jobs[job_id])  # cada tick de progresso persiste
 
     try:
         resultado = await asyncio.to_thread(
@@ -173,11 +239,26 @@ async def _executar_pipeline(job_id: str, filepath: str, loja: str, modo: str, o
         job.status = "erro"
         job.erro = f"Erro inesperado: {e}"
         job.mensagem = "Ocorreu um erro inesperado. Tente novamente."
+    finally:
+        _salvar_estado(job)  # estado final (concluido OU erro)
+
+
+def _get_job(job_id: str) -> Optional[JobState]:
+    """Retorna JobState do dict em memoria OU fallback do disco (/tmp/jobs/<id>/_state.json).
+    Cobre o cenario onde o request HTTP cai em container Lambda warm que ja
+    rodou o pipeline mas perdeu o dict (modulo recarregado). Cross-container
+    100% ainda requer storage compartilhado (Vercel Blob/KV — follow-up)."""
+    job = jobs.get(job_id)
+    if job is None:
+        job = _carregar_estado(job_id)
+        if job is not None:
+            jobs[job_id] = job  # cache de volta no dict pra reqs subsequentes
+    return job
 
 
 @app.get("/api/status/{job_id}")
 async def status(job_id: str):
-    job = jobs.get(job_id)
+    job = _get_job(job_id)
     if not job:
         raise HTTPException(404, detail="Job não encontrado")
     return {
@@ -196,7 +277,7 @@ async def download(job_id: str, tipo: str):
     if tipo not in ("shopee", "erp", "kakashi"):
         raise HTTPException(400, detail="Tipo deve ser 'shopee', 'erp' ou 'kakashi'")
 
-    job = jobs.get(job_id)
+    job = _get_job(job_id)
     if not job:
         raise HTTPException(404, detail="Job não encontrado")
     if job.status != "concluido":

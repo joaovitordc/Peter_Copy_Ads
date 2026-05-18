@@ -12,7 +12,8 @@ Uso:
 
 Saida: JSON para stdout com lista de URLs diretas do ImgBB.
 """
-import sys, json, os, time, io, base64
+import sys, json, os, io, base64, time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from dotenv import load_dotenv
 
@@ -20,7 +21,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY", "")
 IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload"
-DELAY_ENTRE_UPLOADS = 0.6  # segundos
+UPLOAD_WORKERS = 4          # paraleliza uploads via ThreadPoolExecutor
 DOWNLOAD_TIMEOUT = 30       # segundos
 JPEG_QUALITY = 92           # qualidade do JPEG re-encodado pos-crop
 
@@ -118,16 +119,37 @@ def upload_url(image_url: str, nome: str = "") -> str | None:
 
 
 def upload_imagens(urls: list[str]) -> list[str | None]:
-    """Faz upload de uma lista de URLs, retorna lista de URLs ImgBB (ou None se falhou)."""
-    resultados = []
-    for i, url in enumerate(urls):
-        if url:
-            result = upload_url(url)
-            resultados.append(result)
-            if i < len(urls) - 1:
-                time.sleep(DELAY_ENTRE_UPLOADS)
-        else:
-            resultados.append(None)
+    """Faz upload paralelo (UPLOAD_WORKERS=4) com crop quadrado por imagem.
+
+    Mantem a ordem do input (mesmo terminando out-of-order entre threads).
+    Falhas individuais viram None na posicao correspondente — nao derrubam
+    o batch inteiro. Pra <=1 URL valida, faz sequencial pra evitar overhead
+    de threading.
+    """
+    if not urls:
+        return []
+
+    validos = [(i, u) for i, u in enumerate(urls) if u]
+    resultados: list[str | None] = [None] * len(urls)
+
+    # Pra 0 ou 1 imagem valida, sequencial e mais barato
+    if len(validos) <= 1:
+        for i, u in validos:
+            resultados[i] = upload_url(u)
+        return resultados
+
+    # Paralelo: 4 workers simultaneos. ImgBB aceita uploads concorrentes;
+    # cada thread faz download + crop Pillow + upload base64 independente.
+    with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
+        futures = {executor.submit(upload_url, u): i for i, u in validos}
+        for fut in as_completed(futures):
+            i = futures[fut]
+            try:
+                resultados[i] = fut.result()
+            except Exception as e:
+                print(f"  [ERRO] Thread upload idx={i}: {e}", file=sys.stderr)
+                resultados[i] = None
+
     return resultados
 
 
