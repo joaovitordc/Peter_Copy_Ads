@@ -405,22 +405,25 @@ async def descartar(payload: dict):
     if not produtos_filtrados:
         raise HTTPException(400, detail="Você descartou TODOS os produtos. Operação cancelada.")
 
-    # 2. Remove SKUs descartados do skus_em_uso.json (libera reuso)
-    import build_shopee_template as _bs
-    skus_db = _bs.carregar_skus()
+    # 2. Remove SKUs descartados do banco. Usa liberar_loja(sku, loja_atual)
+    # pra preservar info se o SKU estiver cadastrado em outras lojas tambem
+    # (multi-loja via array `lojas_cadastradas`). Se o array ficar vazio
+    # depois, a linha eh deletada automaticamente (libera o nome pra reuso).
+    import sku_storage as _sku_storage
     removidos_db = []
     for sku_base in skus_base:
-        if sku_base in skus_db:
-            skus_db.pop(sku_base)
-            removidos_db.append(sku_base)
-    if removidos_db:
-        _bs.salvar_skus(skus_db)
+        try:
+            if _sku_storage.liberar_loja(sku_base, job.loja or ""):
+                removidos_db.append(sku_base)
+        except Exception as e:
+            print(f"[AVISO] liberar_loja({sku_base}, {job.loja}) falhou: {e}", file=sys.stderr)
 
     # 3. Regenera planilhas com a lista filtrada
     novo_input = {"loja": job.loja, "produtos": produtos_filtrados}
     output_dir = job.output_dir or str(JOBS_DIR / job.job_id)
 
     try:
+        import build_shopee_template as _bs
         import build_erp_template as _berp
         import export_kakashi as _ekak
         job.shopee_path = _bs.gerar_shopee(novo_input, output_dir)

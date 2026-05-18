@@ -131,9 +131,10 @@ def gerar_shopee(input_json: dict, output_dir: str) -> str:
         if nome_sku in skus_existentes:
             existente = skus_existentes[nome_sku]
             if existente["display"] != produto.get("nome_arte_display", ""):
+                lojas_existente = existente.get("lojas") or [existente.get("loja", "?")]
                 conflitos.append(
                     f"  CONFLITO: SKU '{nome_sku}' ja existe para '{existente['display']}' "
-                    f"(loja {existente['loja']}, {existente['criado_em']}). "
+                    f"(em {', '.join(lojas_existente)}, criado {existente['criado_em']}). "
                     f"Produto atual: '{produto.get('nome_arte_display', '')}'"
                 )
     if conflitos:
@@ -232,18 +233,19 @@ def gerar_shopee(input_json: dict, output_dir: str) -> str:
 
     wb.save(caminho)
 
-    # Registrar novos SKUs no arquivo de controle
+    # Registrar novos SKUs no banco. adicionar() faz MERGE inteligente:
+    # se o SKU ja existe no banco com outras lojas (ex: PPJ ja cadastrou
+    # `DeusEBom`, agora AllQuadros tambem), adiciona AllQuadros ao array
+    # `lojas_cadastradas` sem duplicar. Se for SKU novo, faz INSERT.
     hoje = date.today().strftime("%Y-%m-%d")
     for produto in produtos:
         nome_sku = produto["nome_arte_sku"]
-        if nome_sku not in skus_existentes:
-            skus_existentes[nome_sku] = {
-                "display": produto.get("nome_arte_display", ""),
-                "loja": loja,
-                "tipo": produto.get("tipo", "Q1"),
-                "criado_em": hoje,
-            }
-    salvar_skus(skus_existentes)
+        _sku_storage.adicionar(nome_sku, {
+            "loja":      loja,
+            "tipo":      produto.get("tipo", "Q1"),
+            "display":   produto.get("nome_arte_display", ""),
+            "criado_em": hoje,
+        })
 
     print(f"[OK] Shopee: {caminho} ({len(produtos)} produtos, {total_linhas} linhas)", file=sys.stderr)
     return caminho
