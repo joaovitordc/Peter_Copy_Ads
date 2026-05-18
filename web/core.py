@@ -583,6 +583,12 @@ def processar(
         produto["imagem_2"]    = urls_imgbb[2] or ""
         produto["imagem_3"]    = urls_imgbb[3] or ""
 
+        # Preserva URL original da capa pra UI de recrop client-side (Cropper.js
+        # precisa da imagem completa, nao da versao ja recortada que esta no
+        # ImgBB). Se a fonte original quebrar dps, o cropper falha silencioso —
+        # operador so vai poder descartar, nao reajustar.
+        produto["imagem_capa_original"] = urls_upload[0] if urls_upload else ""
+
         # delay entre produtos removido — upload_imagens ja paraleliza com
         # 4 workers; throttle inter-produto era margem extra pra rate-limit
         # ImgBB que se mostrou desnecessaria na pratica (operador estava
@@ -616,24 +622,90 @@ def processar(
         )
 
     # ── Etapa 5: Montar JSON intermediario (so produtos OK) ───────────────
-    progresso("Montando dados dos produtos...", 82)
+    progresso("Aguardando revisao do operador...", 82)
     input_json = {
         "loja": loja,
         "categoria": categoria,
         "produtos": [
             {
-                "nome_arte_sku":     p["nome_arte_sku"],
-                "nome_arte_display": p["nome_arte_display"],
-                "tipo":              p["tipo"],
-                "titulo_shopee":     p["titulo_shopee"],
-                "imagem_capa":       p["imagem_capa"],
-                "imagem_1":          p["imagem_1"],
-                "imagem_2":          p["imagem_2"],
-                "imagem_3":          p["imagem_3"],
+                "nome_arte_sku":          p["nome_arte_sku"],
+                "nome_arte_display":      p["nome_arte_display"],
+                "tipo":                   p["tipo"],
+                "titulo_shopee":          p["titulo_shopee"],
+                "imagem_capa":            p["imagem_capa"],
+                "imagem_capa_original":   p.get("imagem_capa_original", ""),
+                "imagem_1":               p["imagem_1"],
+                "imagem_2":               p["imagem_2"],
+                "imagem_3":               p["imagem_3"],
             }
             for p in produtos_ok
         ],
     }
+
+    # ── Fim da fase 1 ─────────────────────────────────────────────────────
+    # Em vez de gerar as 3 planilhas direto, retorna o input_json e a lista
+    # de rejeitados pro caller (web/app.py). Operador revisa capas no UI,
+    # ajusta crops via /api/recrop, marca descartes, e chama /api/confirmar
+    # que dispara gerar_planilhas() abaixo.
+    return {
+        "input_json":           input_json,
+        "produtos_rejeitados":  produtos_rejeitados,
+        "produtos":             len(produtos_ok),
+        "rejeitados":           len(produtos_rejeitados),
+        "avisos":               avisos,
+    }
+
+
+def gerar_planilhas(
+    input_json: dict,
+    produtos_rejeitados: list,
+    output_dir: str,
+    descartes: list[str] | None = None,
+    avisos: list | None = None,
+    progress_cb: Callable[[str, int], None] | None = None,
+) -> dict:
+    """Fase 2 do pipeline: gera as 3 planilhas (Shopee, ERP, Kakashi) a partir
+    do input_json ja confirmado pelo operador. Aplica descartes (lista de
+    nome_arte_sku) antes de gerar.
+
+    Args:
+        input_json:            {loja, categoria, produtos: [...]} retornado por processar()
+        produtos_rejeitados:   lista de dicts dos produtos rejeitados (capa nao subiu)
+        output_dir:            pasta de destino
+        descartes:             lista de sku_base (nome_arte_sku) pra remover antes de gerar
+        avisos:                lista acumulada de avisos pra estender
+        progress_cb:           callback de progresso
+
+    Returns:
+        {shopee_path, erp_path, kakashi_path, rejeitados_path, produtos, rejeitados, avisos, input_json}
+    """
+    descartes = descartes or []
+    avisos = avisos if avisos is not None else []
+
+    def progresso(msg: str, pct: int):
+        if progress_cb:
+            progress_cb(msg, pct)
+
+    loja = input_json.get("loja", "LOJA")
+
+    # Filtra produtos descartados antes de gerar
+    if descartes:
+        descartes_set = set(descartes)
+        input_json = {
+            **input_json,
+            "produtos": [
+                p for p in input_json.get("produtos", [])
+                if p.get("nome_arte_sku") not in descartes_set
+            ],
+        }
+
+    produtos_finais = input_json.get("produtos", [])
+
+    if not produtos_finais:
+        raise ProcessamentoError(
+            "Todos os produtos foram descartados na revisao. Operacao cancelada.",
+            avisos=avisos,
+        )
 
     # ── Etapa 6: Gerar planilha Shopee ────────────────────────────────────
     progresso("Gerando planilha Shopee...", 88)
@@ -675,8 +747,8 @@ def processar(
         "erp_path":        erp_path,
         "kakashi_path":    kakashi_path,
         "rejeitados_path": rejeitados_path,
-        "produtos":        len(produtos_ok),
+        "produtos":        len(produtos_finais),
         "rejeitados":      len(produtos_rejeitados),
         "avisos":          avisos,
-        "input_json":      input_json,  # snapshot pra regenerar via /api/descartar
+        "input_json":      input_json,
     }

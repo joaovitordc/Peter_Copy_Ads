@@ -67,11 +67,16 @@ class JobState:
     avisos: list = field(default_factory=list)
     erro: Optional[str] = None
     criado_em: datetime = field(default_factory=datetime.now)
-    # Pra suportar /api/descartar — operador revisa thumbnails e exclui produtos
-    # com capa cortada antes de cadastrar na Shopee. Precisa do input_json
-    # original (lista de produtos OK + loja) pra poder regenerar planilhas.
+    # Pipeline split em 2 fases (revisao de capas obrigatoria):
+    #   fase 1: parser + LLM + upload ImgBB com crop centralizado padrao
+    #     -> status: "aguardando_confirmacao"
+    #   operador revisa, ajusta crops (/api/recrop), marca descartes
+    #   fase 2 (/api/confirmar): aplica descartes, gera 3 planilhas
+    #     -> status: "concluido"
     loja: Optional[str] = None
+    categoria: Optional[str] = None
     input_json: Optional[dict] = None
+    produtos_rejeitados: list = field(default_factory=list)  # falha de upload na fase 1
     output_dir: Optional[str] = None
     descartados: list = field(default_factory=list)  # SKUs descartados
 
@@ -111,7 +116,9 @@ def _salvar_estado(job: JobState) -> None:
                 "erro":            job.erro,
                 "criado_em":       job.criado_em.isoformat(),
                 "loja":            job.loja,
+                "categoria":       job.categoria,
                 "input_json":      job.input_json,
+                "produtos_rejeitados": job.produtos_rejeitados,
                 "output_dir":      job.output_dir,
                 "descartados":     job.descartados,
             }, f, ensure_ascii=False)
@@ -145,7 +152,9 @@ def _carregar_estado(job_id: str) -> Optional[JobState]:
             erro=d.get("erro"),
             criado_em=datetime.fromisoformat(d["criado_em"]) if d.get("criado_em") else datetime.now(),
             loja=d.get("loja"),
+            categoria=d.get("categoria"),
             input_json=d.get("input_json"),
+            produtos_rejeitados=d.get("produtos_rejeitados", []),
             output_dir=d.get("output_dir"),
             descartados=d.get("descartados", []),
         )
@@ -233,7 +242,9 @@ async def processar(
     with open(input_path, "wb") as f:
         f.write(conteudo)
 
-    jobs[job_id] = JobState(job_id=job_id, loja=loja, output_dir=str(job_dir))
+    jobs[job_id] = JobState(
+        job_id=job_id, loja=loja, categoria=categoria, output_dir=str(job_dir),
+    )
     _salvar_estado(jobs[job_id])  # persistencia imediata pra polling pegar mesmo em outra request
     background_tasks.add_task(
         _executar_pipeline, job_id, str(input_path), loja, modo, str(job_dir), categoria,
@@ -246,6 +257,10 @@ async def processar(
 async def _executar_pipeline(
     job_id: str, filepath: str, loja: str, modo: str, output_dir: str, categoria: str = "",
 ):
+    """Roda a FASE 1 do pipeline (parser → LLM → upload ImgBB crop centralizado).
+    Termina marcando status `aguardando_confirmacao` — operador entao revisa
+    capas, ajusta crops via /api/recrop, marca descartes e chama /api/confirmar
+    pra rodar a fase 2 (gerar planilhas)."""
     from web.core import processar, ProcessamentoError
 
     job = jobs.get(job_id)
@@ -265,6 +280,63 @@ async def _executar_pipeline(
         resultado = await asyncio.to_thread(
             processar, filepath, loja, output_dir, modo, progresso, categoria,
         )
+        n_ok = resultado["produtos"]
+        n_rej = resultado.get("rejeitados", 0)
+        job.input_json = resultado.get("input_json")
+        job.produtos_rejeitados = resultado.get("produtos_rejeitados") or []
+        job.produtos = n_ok
+        job.rejeitados = n_rej
+        job.avisos = resultado.get("avisos", [])
+        job.status = "aguardando_confirmacao"
+        if n_rej > 0:
+            job.mensagem = f"{n_ok} produtos prontos pra revisao + {n_rej} rejeitados."
+        else:
+            job.mensagem = f"{n_ok} produtos prontos pra revisao."
+        job.percent = 85
+
+    except ProcessamentoError as e:
+        job.status = "erro"
+        job.erro = str(e)
+        job.mensagem = str(e)
+        job.avisos = getattr(e, "avisos", []) or []
+    except Exception as e:
+        job.status = "erro"
+        job.erro = f"Erro inesperado: {e}"
+        job.mensagem = "Ocorreu um erro inesperado. Tente novamente."
+    finally:
+        _salvar_estado(job)
+
+
+async def _executar_fase2(job_id: str, descartes: list):
+    """Roda a FASE 2 (gera as 3 planilhas). Disparada pelo /api/confirmar
+    apos o operador revisar capas + ajustar crops + marcar descartes."""
+    from web.core import gerar_planilhas, ProcessamentoError
+
+    job = jobs.get(job_id)
+    if not job:
+        return
+    if not job.input_json or not job.output_dir:
+        return
+
+    job.status = "gerando_planilhas"
+    _salvar_estado(job)
+
+    def progresso(msg: str, pct: int):
+        if job_id in jobs:
+            jobs[job_id].mensagem = msg
+            jobs[job_id].percent = pct
+            _salvar_estado(jobs[job_id])
+
+    try:
+        resultado = await asyncio.to_thread(
+            gerar_planilhas,
+            job.input_json,
+            job.produtos_rejeitados or [],
+            job.output_dir,
+            descartes or [],
+            list(job.avisos or []),
+            progresso,
+        )
         job.status = "concluido"
         n_ok = resultado["produtos"]
         n_rej = resultado.get("rejeitados", 0)
@@ -280,10 +352,9 @@ async def _executar_pipeline(
         job.produtos = n_ok
         job.rejeitados = n_rej
         job.avisos = resultado.get("avisos", [])
-        # Snapshot do input_json pra suportar /api/descartar — operador pode
-        # marcar produtos com capa cortada pra remover; regeneramos as
-        # planilhas com a lista filtrada.
+        # input_json final ja filtrado por descartes (post-fase2)
         job.input_json = resultado.get("input_json")
+        job.descartados = list(set((job.descartados or []) + (descartes or [])))
 
     except ProcessamentoError as e:
         job.status = "erro"
@@ -295,7 +366,7 @@ async def _executar_pipeline(
         job.erro = f"Erro inesperado: {e}"
         job.mensagem = "Ocorreu um erro inesperado. Tente novamente."
     finally:
-        _salvar_estado(job)  # estado final (concluido OU erro)
+        _salvar_estado(job)
 
 
 def _get_job(job_id: str) -> Optional[JobState]:
@@ -358,15 +429,16 @@ async def download(job_id: str, tipo: str):
 
 @app.get("/api/produtos/{job_id}")
 async def produtos(job_id: str):
-    """Lista produtos processados com SKU + display + URL capa pra revisao
-    visual de capas cortadas antes da ativacao na Shopee."""
+    """Lista produtos processados pra revisao visual de capas + ajuste de crop.
+    Aceita status `aguardando_confirmacao` (revisao pre-gerar planilhas) e
+    `concluido` (revisao post-fato, retrocompat).
+    """
     job = _get_job(job_id)
     if not job:
         raise HTTPException(404, detail="Job não encontrado")
-    if job.status != "concluido":
-        raise HTTPException(400, detail="Processamento ainda não concluído")
+    if job.status not in ("aguardando_confirmacao", "concluido"):
+        raise HTTPException(400, detail="Processamento ainda não concluiu a fase 1")
     if not job.input_json:
-        # Job antigo (de antes do JobState.input_json existir) — sem suporte
         return {"produtos": [], "loja": job.loja, "suporte_descarte": False}
 
     lista = []
@@ -374,101 +446,121 @@ async def produtos(job_id: str):
         tipo = p.get("tipo", "Q1")
         sku_base = p.get("nome_arte_sku", "")
         lista.append({
-            "sku_completo": f"{tipo}_{sku_base}",  # ex: KIT3_AnimaisOceano
-            "sku_base":     sku_base,              # ex: AnimaisOceano
-            "tipo":         tipo,
-            "display":      p.get("nome_arte_display", ""),
-            "titulo":       p.get("titulo_shopee", ""),
-            "imagem_capa":  p.get("imagem_capa", ""),
-            "descartado":   sku_base in job.descartados,
+            "sku_completo":          f"{tipo}_{sku_base}",
+            "sku_base":              sku_base,
+            "tipo":                  tipo,
+            "display":               p.get("nome_arte_display", ""),
+            "titulo":                p.get("titulo_shopee", ""),
+            "imagem_capa":           p.get("imagem_capa", ""),
+            "imagem_capa_original":  p.get("imagem_capa_original", ""),
+            "descartado":            sku_base in (job.descartados or []),
         })
     return {
         "produtos":         lista,
         "loja":             job.loja,
+        "categoria":        job.categoria,
+        "status":           job.status,
         "suporte_descarte": True,
     }
 
 
-@app.post("/api/descartar")
-async def descartar(payload: dict):
-    """Filtra produtos descartados (operador marcou capa ruim), regenera
-    as planilhas Shopee/ERP/Kakashi com a lista limpa, e remove os SKUs
-    descartados do skus_em_uso.json (libera reuso futuro).
+@app.post("/api/confirmar")
+async def confirmar(background_tasks: BackgroundTasks, payload: dict):
+    """Dispara a fase 2 do pipeline: gera as 3 planilhas (Shopee/ERP/Kakashi)
+    aplicando a lista de descartes. Se algum SKU foi descartado, tambem libera
+    a loja correspondente no banco peter_skus_em_uso (libera o nome pra reuso).
 
-    Body: { "job_id": str, "skus_base": ["AnimaisOceano", "AstronautaFofo"] }
+    Body: { "job_id": str, "descartes": ["AnimaisOceano", ...] }  # descartes opcional
     """
     job_id = payload.get("job_id")
-    skus_base = payload.get("skus_base", [])
+    descartes = payload.get("descartes") or []
     if not job_id:
         raise HTTPException(400, detail="job_id obrigatório")
-    if not isinstance(skus_base, list):
-        raise HTTPException(400, detail="skus_base deve ser lista")
+    if not isinstance(descartes, list):
+        raise HTTPException(400, detail="descartes deve ser lista")
 
     job = _get_job(job_id)
     if not job:
         raise HTTPException(404, detail="Job não encontrado")
-    if job.status != "concluido":
-        raise HTTPException(400, detail="Processamento ainda não concluído")
+    if job.status != "aguardando_confirmacao":
+        raise HTTPException(400, detail=f"Job em status '{job.status}', esperava 'aguardando_confirmacao'")
     if not job.input_json:
-        raise HTTPException(400, detail="Job antigo (sem snapshot do input_json) — refaça o processamento.")
-    if not skus_base:
-        return {"produtos_ativos": job.produtos, "descartados": 0, "mensagem": "Nenhum SKU marcado pra descarte."}
+        raise HTTPException(400, detail="Job sem input_json — refaça o processamento.")
 
-    skus_descartados_set = set(skus_base)
+    # Libera os SKUs descartados no banco antes de gerar as planilhas.
+    # liberar_loja remove a loja do array lojas_cadastradas; se o array
+    # ficar vazio, a linha eh deletada (libera o nome pra reuso futuro).
+    if descartes:
+        import sku_storage as _sku_storage
+        for sku_base in descartes:
+            try:
+                _sku_storage.liberar_loja(sku_base, job.loja or "")
+            except Exception as e:
+                print(f"[AVISO] liberar_loja({sku_base}, {job.loja}) falhou: {e}", file=sys.stderr)
 
-    # 1. Filtra produtos_ok removendo descartados
-    produtos_originais = job.input_json.get("produtos", [])
-    produtos_filtrados = [p for p in produtos_originais if p.get("nome_arte_sku") not in skus_descartados_set]
-    n_descartados = len(produtos_originais) - len(produtos_filtrados)
+    # Dispara fase 2 em background — polling do frontend vai ver
+    # "gerando_planilhas" -> "concluido"
+    background_tasks.add_task(_executar_fase2, job_id, descartes)
+    return {"job_id": job_id, "iniciado": True, "descartes": len(descartes)}
 
-    if n_descartados == 0:
-        return {"produtos_ativos": job.produtos, "descartados": 0,
-                "mensagem": "Nenhum SKU listado bateu com produtos do job."}
 
-    if not produtos_filtrados:
-        raise HTTPException(400, detail="Você descartou TODOS os produtos. Operação cancelada.")
+@app.post("/api/recrop")
+async def recrop(payload: dict):
+    """Reajusta o crop da capa de UM produto via Cropper.js no UI.
 
-    # 2. Remove SKUs descartados do banco. Usa liberar_loja(sku, loja_atual)
-    # pra preservar info se o SKU estiver cadastrado em outras lojas tambem
-    # (multi-loja via array `lojas_cadastradas`). Se o array ficar vazio
-    # depois, a linha eh deletada automaticamente (libera o nome pra reuso).
-    import sku_storage as _sku_storage
-    removidos_db = []
-    for sku_base in skus_base:
-        try:
-            if _sku_storage.liberar_loja(sku_base, job.loja or ""):
-                removidos_db.append(sku_base)
-        except Exception as e:
-            print(f"[AVISO] liberar_loja({sku_base}, {job.loja}) falhou: {e}", file=sys.stderr)
-
-    # 3. Regenera planilhas com a lista filtrada
-    novo_input = {"loja": job.loja, "produtos": produtos_filtrados}
-    output_dir = job.output_dir or str(JOBS_DIR / job.job_id)
-
-    try:
-        import build_shopee_template as _bs
-        import build_erp_template as _berp
-        import export_kakashi as _ekak
-        job.shopee_path = _bs.gerar_shopee(novo_input, output_dir)
-        job.erp_path = _berp.gerar_erp(novo_input, output_dir, loja=job.loja)
-        kakashi_path, _ = _ekak.gerar_kakashi(novo_input, output_dir)
-        job.kakashi_path = kakashi_path
-    except Exception as e:
-        raise HTTPException(500, detail=f"Erro ao regenerar planilhas: {e}")
-
-    # 4. Atualiza estado
-    job.input_json = novo_input
-    job.descartados = list(set(job.descartados or []) | skus_descartados_set)
-    job.produtos = len(produtos_filtrados)
-    job.mensagem = f"{len(produtos_filtrados)} produtos ativos ({n_descartados} descartados nesta sessão)"
-    _salvar_estado(job)
-
-    return {
-        "produtos_ativos":  len(produtos_filtrados),
-        "descartados":      n_descartados,
-        "removidos_do_db":  len(removidos_db),
-        "mensagem":         f"{n_descartados} produtos descartados. Planilhas regeneradas. SKUs liberados pra reuso: {len(removidos_db)}.",
+    Body: {
+      job_id: str,
+      sku_base: str,
+      image_url: str,                  # URL original (pre-crop) da capa
+      crop: {x: int, y: int, width: int, height: int}   # coordenadas em pixels da original
     }
+
+    Baixa a imagem original, recorta com os params, sobe ImgBB e atualiza
+    a URL da capa no input_json do job. Retorna { nova_url }.
+    """
+    job_id = payload.get("job_id")
+    sku_base = payload.get("sku_base")
+    image_url = payload.get("image_url") or ""
+    crop = payload.get("crop") or {}
+
+    if not job_id or not sku_base or not image_url:
+        raise HTTPException(400, detail="job_id, sku_base e image_url obrigatórios")
+    try:
+        x = int(crop.get("x", 0))
+        y = int(crop.get("y", 0))
+        w = int(crop.get("width", 0))
+        h = int(crop.get("height", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="crop.x/y/width/height devem ser numéricos")
+    if w <= 0 or h <= 0:
+        raise HTTPException(400, detail="crop.width e crop.height devem ser > 0")
+
+    job = _get_job(job_id)
+    if not job:
+        raise HTTPException(404, detail="Job não encontrado")
+    if job.status != "aguardando_confirmacao":
+        raise HTTPException(400, detail=f"Job em status '{job.status}', esperava 'aguardando_confirmacao'")
+    if not job.input_json:
+        raise HTTPException(400, detail="Job sem input_json")
+
+    # Roda upload em thread (download+crop+upload pode demorar ~3-5s)
+    import upload_images as _upimg
+    nova_url = await asyncio.to_thread(_upimg.upload_recrop, image_url, x, y, w, h)
+    if not nova_url:
+        raise HTTPException(502, detail="Falha no recrop (download/PIL/ImgBB). Veja logs do servidor.")
+
+    # Atualiza a URL no produto correspondente
+    atualizado = False
+    for p in job.input_json.get("produtos", []):
+        if p.get("nome_arte_sku") == sku_base:
+            p["imagem_capa"] = nova_url
+            atualizado = True
+            break
+    if not atualizado:
+        raise HTTPException(404, detail=f"SKU '{sku_base}' não encontrado no job")
+
+    _salvar_estado(job)
+    return {"sku_base": sku_base, "nova_url": nova_url}
 
 
 @app.get("/api/skus")

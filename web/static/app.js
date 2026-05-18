@@ -39,12 +39,21 @@ const btnDownloadKakashi    = $('btn-download-kakashi');
 const btnDownloadRejeitados = $('btn-download-rejeitados');
 const downloadRejeitadosHint= $('download-rejeitados-hint');
 
-// Revisão de capas (Opção A — thumbnails + descarte)
+// Revisão de capas (entre fase 1 e fase 2 — descarte + ajuste de crop)
 const reviewSection = $('review-section');
 const reviewGrid    = $('review-grid');
 const reviewStatus  = $('review-status');
-const btnDescartar  = $('btn-descartar');
+const btnConfirmar  = $('btn-confirmar');
 const descartadosSet = new Set();  // SKUs base marcados pra descartar
+
+// Modal de ajuste de crop (Cropper.js)
+const cropperModal       = $('cropper-modal');
+const cropperModalTitle  = $('cropper-modal-title');
+const cropperModalClose  = $('cropper-modal-close');
+const cropperImg         = $('cropper-img');
+const cropperCancel      = $('cropper-cancel');
+const cropperSave        = $('cropper-save');
+const cropperState       = { instance: null, sku_base: null, image_url: null, naturalSize: null };
 const avisosBox         = $('avisos-box');
 const avisosLista       = $('avisos-lista');
 const btnNovaPlanilha   = $('btn-nova-planilha');
@@ -251,6 +260,25 @@ function configurarBotoes() {
   btnDownloadErp?.addEventListener('click', () => baixarArquivo('erp'));
   btnDownloadKakashi?.addEventListener('click', () => baixarArquivo('kakashi'));
   btnDownloadRejeitados?.addEventListener('click', () => baixarArquivo('rejeitados'));
+  // Modal de crop (<dialog> nativo)
+  cropperModalClose?.addEventListener('click', fecharCropper);
+  cropperCancel?.addEventListener('click', fecharCropper);
+  cropperSave?.addEventListener('click', salvarCropper);
+  // Click fora da janela (no ::backdrop) fecha o dialog. Detecta via bounding rect
+  // porque clicks no backdrop tem o <dialog> como event.target (estranho mas e o
+  // comportamento padrao do <dialog>).
+  cropperModal?.addEventListener('click', (e) => {
+    if (e.target !== cropperModal) return;  // click foi num filho, ignora
+    const rect = cropperModal.getBoundingClientRect();
+    const dentro = e.clientX >= rect.left && e.clientX <= rect.right &&
+                   e.clientY >= rect.top  && e.clientY <= rect.bottom;
+    if (!dentro) fecharCropper();
+  });
+  // ESC tambem fecha (handler do <dialog> dispara `cancel` event)
+  cropperModal?.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    fecharCropper();
+  });
 }
 
 function atualizarBotao() {
@@ -308,8 +336,16 @@ async function consultarStatus() {
     const data = await res.json();
     atualizarProgresso(data.mensagem || '', data.percent || 0);
 
-    if (data.status === 'concluido') { pararPolling(); mostrarResultado(data); }
-    else if (data.status === 'erro') { pararPolling(); mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.', data.avisos); }
+    if (data.status === 'aguardando_confirmacao') {
+      pararPolling();
+      mostrarRevisao();
+    } else if (data.status === 'concluido') {
+      pararPolling();
+      mostrarResultado(data);
+    } else if (data.status === 'erro') {
+      pararPolling();
+      mostrarErro(data.erro || data.mensagem || 'Erro desconhecido.', data.avisos);
+    }
   } catch { /* retry na próxima iteração */ }
 }
 
@@ -318,9 +354,15 @@ function mostrarSecao(secao) {
   // formSection é um wrapper com display: contents (ver HTML) — preserva o grid
   formSection.style.display     = secao === 'form'     ? 'contents' : 'none';
   progressSection.style.display = secao === 'progress' ? 'flex'     : 'none';
+  if (reviewSection) reviewSection.style.display = secao === 'review' ? 'flex' : 'none';
   resultSection.style.display   = secao === 'result'   ? 'flex'     : 'none';
   errorSection.style.display    = secao === 'error'    ? 'block'    : 'none';
   btnProcessar.style.display    = secao === 'form'     ? 'flex'     : 'none';
+}
+
+async function mostrarRevisao() {
+  mostrarSecao('review');
+  if (state.jobId) await carregarRevisaoCapas(state.jobId);
 }
 
 function atualizarProgresso(mensagem, pct) {
@@ -366,26 +408,25 @@ function mostrarResultado(data) {
   }
 
   mostrarSecao('result');
-
-  // Carrega thumbnails de capa pra revisão (Opção A)
-  if (state.jobId) carregarRevisaoCapas(state.jobId);
 }
 
-/* ── Revisão de capas (Opção A — thumbnails + descarte) ────────────────── */
+/* ── Revisão de capas (entre fase 1 e fase 2 — descarte + ajuste crop) ──── */
 async function carregarRevisaoCapas(jobId) {
   if (!reviewSection || !reviewGrid) return;
   try {
     const res = await fetch(`/api/produtos/${jobId}`);
-    if (!res.ok) { reviewSection.style.display = 'none'; return; }
+    if (!res.ok) {
+      mostrarErro('Falha ao carregar produtos pra revisão.');
+      return;
+    }
     const data = await res.json();
-    if (!data.suporte_descarte || !data.produtos?.length) {
-      reviewSection.style.display = 'none';
+    if (!data.produtos?.length) {
+      mostrarErro('Nenhum produto disponível pra revisão.');
       return;
     }
     renderizarRevisao(data.produtos);
-    reviewSection.style.display = '';
-  } catch {
-    reviewSection.style.display = 'none';
+  } catch (err) {
+    mostrarErro(`Erro de rede: ${err.message || err}`);
   }
 }
 
@@ -394,19 +435,29 @@ function renderizarRevisao(produtos) {
   descartadosSet.clear();
 
   produtos.forEach(p => {
-    const item = document.createElement('label');
+    const item = document.createElement('div');
     item.className = 'review-item';
     item.dataset.sku = p.sku_base;
     item.innerHTML = `
-      <input type="checkbox" aria-label="Descartar ${p.sku_completo}">
-      <img src="${p.imagem_capa}" alt="Capa ${p.display}" loading="lazy"
+      <img class="review-thumb" src="${p.imagem_capa}"
+           alt="Capa ${p.display}" loading="lazy"
            onerror="this.style.background='#fee'; this.alt='Capa não carregou'">
       <div class="review-info">
         <span class="review-sku">${p.sku_completo}</span>
         <span class="review-display">${p.display}</span>
       </div>
+      <div class="review-actions-item">
+        <button type="button" class="btn-secondary btn-recrop"
+                ${p.imagem_capa_original ? '' : 'disabled title="Sem URL original"'}>
+          Ajustar crop
+        </button>
+        <label class="review-descartar">
+          <input type="checkbox" aria-label="Descartar ${p.sku_completo}">
+          Descartar
+        </label>
+      </div>
     `;
-    const chk = item.querySelector('input');
+    const chk = item.querySelector('input[type="checkbox"]');
     chk.addEventListener('change', () => {
       if (chk.checked) {
         descartadosSet.add(p.sku_base);
@@ -415,21 +466,24 @@ function renderizarRevisao(produtos) {
         descartadosSet.delete(p.sku_base);
         item.classList.remove('descartar');
       }
-      atualizarBotaoDescartar();
+      atualizarStatusRevisao();
     });
+    const btnRecrop = item.querySelector('.btn-recrop');
+    if (btnRecrop && p.imagem_capa_original) {
+      btnRecrop.addEventListener('click', () => abrirCropper(p));
+    }
     reviewGrid.appendChild(item);
   });
-  atualizarBotaoDescartar();
+  atualizarStatusRevisao();
 
-  if (btnDescartar && !btnDescartar.dataset.bound) {
-    btnDescartar.addEventListener('click', aplicarDescarte);
-    btnDescartar.dataset.bound = '1';
+  if (btnConfirmar && !btnConfirmar.dataset.bound) {
+    btnConfirmar.addEventListener('click', confirmarEgerar);
+    btnConfirmar.dataset.bound = '1';
   }
 }
 
-function atualizarBotaoDescartar() {
+function atualizarStatusRevisao() {
   const n = descartadosSet.size;
-  if (btnDescartar) btnDescartar.disabled = (n === 0);
   if (reviewStatus) {
     reviewStatus.textContent = n === 0
       ? 'Nenhum descarte marcado'
@@ -437,40 +491,145 @@ function atualizarBotaoDescartar() {
   }
 }
 
-async function aplicarDescarte() {
-  if (!state.jobId || descartadosSet.size === 0) return;
+async function confirmarEgerar() {
+  if (!state.jobId) return;
   const skus = [...descartadosSet];
-  if (!confirm(`Confirma descartar ${skus.length} produto(s)? As planilhas serão regeneradas sem eles e os SKUs ficarão liberados pra reuso.`)) return;
+  if (skus.length > 0 && !confirm(`Confirmar ${skus.length} descarte(s) e gerar planilhas?`)) return;
 
-  btnDescartar.disabled = true;
-  const labelOriginal = btnDescartar.textContent;
-  btnDescartar.textContent = 'Regenerando...';
+  btnConfirmar.disabled = true;
+  const labelOriginal = btnConfirmar.textContent;
+  btnConfirmar.textContent = 'Confirmando...';
 
   try {
-    const res = await fetch('/api/descartar', {
+    const res = await fetch('/api/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ job_id: state.jobId, skus_base: skus }),
+      body: JSON.stringify({ job_id: state.jobId, descartes: skus }),
     });
     const data = await res.json();
     if (!res.ok) {
       alert(`Erro: ${data.detail || 'desconhecido'}`);
-      btnDescartar.disabled = false;
-      btnDescartar.textContent = labelOriginal;
+      btnConfirmar.disabled = false;
+      btnConfirmar.textContent = labelOriginal;
       return;
     }
-    // Sucesso — recarrega o grid sem os descartados + atualiza subtitle
-    alert(data.mensagem || 'Descarte aplicado.');
-    if (resultSubtitle) {
-      resultSubtitle.textContent = `${data.produtos_ativos} produtos ativos (${data.descartados} descartados nesta sessão).`;
-    }
-    carregarRevisaoCapas(state.jobId);  // re-renderiza o grid (sem descartados)
+    // Sucesso — fase 2 iniciada, volta pra tela de progresso e re-polling
+    mostrarSecao('progress');
+    atualizarProgresso('Gerando planilhas...', 90);
+    iniciarPolling();
   } catch (err) {
     alert(`Erro de rede: ${err.message || err}`);
-    btnDescartar.disabled = false;
-    btnDescartar.textContent = labelOriginal;
+    btnConfirmar.disabled = false;
+    btnConfirmar.textContent = labelOriginal;
+  }
+}
+
+/* ── Cropper modal (ajustar enquadramento da capa) ───────────────────────── */
+function abrirCropper(produto) {
+  if (!cropperModal || !cropperImg) return;
+  if (!produto.imagem_capa_original) {
+    alert('Sem URL original disponível pra esse produto.');
+    return;
+  }
+  if (typeof Cropper === 'undefined') {
+    alert('Cropper.js não carregou. Recarregue a página.');
+    return;
+  }
+
+  cropperState.sku_base  = produto.sku_base;
+  cropperState.image_url = produto.imagem_capa_original;
+  cropperState.naturalSize = null;
+  if (cropperModalTitle) cropperModalTitle.textContent = `Ajustar crop — ${produto.sku_completo}`;
+
+  // Limpa instancia anterior
+  if (cropperState.instance) {
+    cropperState.instance.destroy();
+    cropperState.instance = null;
+  }
+
+  cropperImg.onload = () => {
+    cropperState.naturalSize = { w: cropperImg.naturalWidth, h: cropperImg.naturalHeight };
+    cropperState.instance = new Cropper(cropperImg, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 0.9,
+      background: false,
+      movable: true,
+      zoomable: true,
+      responsive: true,
+    });
+  };
+  cropperImg.onerror = () => {
+    alert('Não foi possível carregar a imagem original (CORS ou link quebrado).');
+    fecharCropper();
+  };
+  // Bust cache pra evitar imagem stale + força recarga
+  cropperImg.src = produto.imagem_capa_original;
+  // <dialog>.showModal() renderiza no top layer + bloqueia interacao com a pagina
+  if (typeof cropperModal.showModal === 'function') {
+    if (!cropperModal.open) cropperModal.showModal();
+  } else {
+    // Fallback (browser < 2022): display flex como antes
+    cropperModal.style.display = 'flex';
+  }
+}
+
+function fecharCropper() {
+  if (cropperState.instance) {
+    cropperState.instance.destroy();
+    cropperState.instance = null;
+  }
+  cropperState.sku_base = null;
+  cropperState.image_url = null;
+  cropperState.naturalSize = null;
+  if (cropperModal) {
+    if (typeof cropperModal.close === 'function' && cropperModal.open) {
+      cropperModal.close();
+    } else {
+      cropperModal.style.display = 'none';
+    }
+  }
+}
+
+async function salvarCropper() {
+  if (!cropperState.instance || !cropperState.sku_base) return;
+
+  // Cropper.getData() retorna {x, y, width, height} em pixels da imagem original
+  const data = cropperState.instance.getData(true);  // rounded
+  const payload = {
+    job_id:    state.jobId,
+    sku_base:  cropperState.sku_base,
+    image_url: cropperState.image_url,
+    crop: { x: data.x, y: data.y, width: data.width, height: data.height },
+  };
+
+  cropperSave.disabled = true;
+  const lbl = cropperSave.textContent;
+  cropperSave.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch('/api/recrop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      alert(`Erro: ${json.detail || 'desconhecido'}`);
+      return;
+    }
+    // Atualiza thumbnail no grid sem refetch
+    const itemEl = reviewGrid.querySelector(`.review-item[data-sku="${cropperState.sku_base}"]`);
+    if (itemEl) {
+      const img = itemEl.querySelector('.review-thumb');
+      if (img) img.src = json.nova_url + (json.nova_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+    }
+    fecharCropper();
+  } catch (err) {
+    alert(`Erro de rede: ${err.message || err}`);
   } finally {
-    btnDescartar.textContent = labelOriginal;
+    cropperSave.disabled = false;
+    cropperSave.textContent = lbl;
   }
 }
 

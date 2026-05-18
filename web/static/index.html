@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peter, The Ads Copier</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css?v=20260518e" />
+  <!-- Cropper.js — biblioteca pra ajustar enquadramento da capa antes de gerar planilhas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script>
     // Aplica o tema o mais cedo possível para evitar flash branco
     (function () {
@@ -196,6 +198,28 @@
           </div>
         </div>
 
+        <!-- ── Revisar capas (entre fase 1 e fase 2 — opcao "Ajustar crop" pra cada item) ── -->
+        <div class="glass-card review-card" id="review-section" style="display:none">
+          <div class="review-header">
+            <h2 class="section-title" style="margin: 0">
+              <span class="step-badge">✓</span>
+              Revisar capas antes de gerar planilhas
+            </h2>
+            <p class="review-hint">
+              Confira a capa de cada produto. Use <strong>"Ajustar crop"</strong>
+              se o quadro estiver mal enquadrado, ou marque <strong>"Descartar"</strong>
+              pra remover do lote. As planilhas só são geradas após você confirmar.
+            </p>
+          </div>
+          <div class="review-grid" id="review-grid"></div>
+          <div class="review-actions">
+            <span class="review-status" id="review-status">Nenhum descarte marcado</span>
+            <button type="button" class="btn-primary btn-confirmar" id="btn-confirmar">
+              Confirmar e gerar planilhas
+            </button>
+          </div>
+        </div>
+
         <!-- ── Resultado ── -->
         <div class="glass-card result-card" id="result-section" style="display:none">
           <div class="result-header">
@@ -208,24 +232,6 @@
             <div>
               <h3 class="result-title">Processamento concluído!</h3>
               <p class="result-subtitle" id="result-subtitle"></p>
-            </div>
-          </div>
-
-          <!-- ── Revisar capas (marcar produtos com capa cortada pra descartar) ── -->
-          <div class="review-section" id="review-section" style="display:none">
-            <div class="review-header">
-              <h4 class="review-title">Revisar capas antes de baixar</h4>
-              <p class="review-hint">
-                Marque <strong>"Descartar"</strong> nos produtos com capa cortada/ruim.
-                Ao confirmar, as planilhas são regeneradas sem eles e os SKUs ficam liberados pra reuso.
-              </p>
-            </div>
-            <div class="review-grid" id="review-grid"></div>
-            <div class="review-actions">
-              <span class="review-status" id="review-status">Nenhum descarte marcado</span>
-              <button type="button" class="btn-primary btn-descartar" id="btn-descartar" disabled>
-                Aplicar descarte e regenerar
-              </button>
             </div>
           </div>
 
@@ -435,6 +441,30 @@
 
   </div>
 
-  <script src="/static/app.js"></script>
+  <!-- Modal de crop — <dialog> HTML5 nativo renderiza no top layer do browser,
+       imune a containing blocks de ancestors com backdrop-filter/transform/filter. -->
+  <dialog id="cropper-modal" class="cropper-dialog">
+    <div class="cropper-modal-header">
+      <h3 class="cropper-modal-title" id="cropper-modal-title">Ajustar crop da capa</h3>
+      <button type="button" class="cropper-modal-close" id="cropper-modal-close"
+              aria-label="Fechar">×</button>
+    </div>
+    <div class="cropper-modal-body">
+      <p class="cropper-modal-hint">
+        Arraste e redimensione o quadro pra enquadrar o quadro corretamente.
+        A área selecionada será o novo card na Shopee (1:1 obrigatório).
+      </p>
+      <div class="cropper-img-wrap">
+        <img id="cropper-img" alt="Imagem original pra cropar" />
+      </div>
+    </div>
+    <div class="cropper-modal-footer">
+      <button type="button" class="btn-secondary" id="cropper-cancel">Cancelar</button>
+      <button type="button" class="btn-primary" id="cropper-save">Salvar novo crop</button>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <script src="/static/app.js?v=20260518e"></script>
 </body>
 </html>

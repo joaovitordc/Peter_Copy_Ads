@@ -79,6 +79,73 @@ def _baixar_e_cortar_quadrado(image_url: str) -> bytes | None:
         return None
 
 
+def upload_recrop(image_url: str, x: int, y: int, width: int, height: int) -> str | None:
+    """Baixa imagem original, aplica crop customizado (params em pixels da
+    imagem original) e sobe no ImgBB. Usado pelo endpoint /api/recrop quando
+    o operador ajusta o enquadramento da capa no UI (Cropper.js).
+
+    Diferenca pro upload_url() padrao: aceita crop_box customizado em vez
+    de fazer center crop. O cropper UI ja garante aspect ratio 1:1, entao
+    width==height na pratica, mas validamos.
+    """
+    if not IMGBB_API_KEY or IMGBB_API_KEY == "sua_chave_aqui":
+        print("[ERRO] IMGBB_API_KEY nao configurada no .env", file=sys.stderr)
+        return None
+
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  [ERRO] Pillow nao instalado — recrop requer Pillow", file=sys.stderr)
+        return None
+
+    try:
+        resp = requests.get(image_url, headers=_REQUEST_HEADERS, timeout=DOWNLOAD_TIMEOUT)
+        resp.raise_for_status()
+        img = Image.open(io.BytesIO(resp.content))
+
+        if img.mode in ("RGBA", "LA", "P"):
+            fundo = Image.new("RGB", img.size, (255, 255, 255))
+            img_rgba = img.convert("RGBA")
+            fundo.paste(img_rgba, mask=img_rgba.split()[3] if img_rgba.mode == "RGBA" else None)
+            img = fundo
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # Clamp pra dentro das bordas da imagem (evita PIL ValueError em
+        # casos extremos onde o cropper UI extrapolou por arredondamento).
+        w_img, h_img = img.size
+        x = max(0, int(x))
+        y = max(0, int(y))
+        right = min(w_img, x + int(width))
+        bottom = min(h_img, y + int(height))
+        if right <= x or bottom <= y:
+            print(f"  [ERRO] crop_box invalido: ({x},{y},{right},{bottom})", file=sys.stderr)
+            return None
+
+        img_cortada = img.crop((x, y, right, bottom))
+
+        buf = io.BytesIO()
+        img_cortada.save(buf, format="JPEG", quality=JPEG_QUALITY, optimize=True)
+        jpeg_bytes = buf.getvalue()
+    except Exception as e:
+        print(f"  [ERRO] Falha no recrop ({type(e).__name__}: {e})", file=sys.stderr)
+        return None
+
+    payload = {"key": IMGBB_API_KEY, "image": base64.b64encode(jpeg_bytes).decode("ascii")}
+    try:
+        r = requests.post(IMGBB_UPLOAD_URL, data=payload, timeout=60)
+        d = r.json()
+        if d.get("success"):
+            url = d["data"]["display_url"]
+            print(f"  OK (recrop {right-x}x{bottom-y}): {image_url[:50]}... -> {url}", file=sys.stderr)
+            return url
+        print(f"  [ERRO] ImgBB recrop: {d.get('error', {}).get('message', 'desconhecido')}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"  [ERRO] Excecao upload recrop: {e}", file=sys.stderr)
+        return None
+
+
 def upload_url(image_url: str, nome: str = "") -> str | None:
     """Faz crop quadrado e envia ao ImgBB. Fallback pra URL direta se crop falhar."""
     if not IMGBB_API_KEY or IMGBB_API_KEY == "sua_chave_aqui":
