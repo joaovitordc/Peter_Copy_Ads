@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peter, The Ads Copier</title>
-  <link rel="stylesheet" href="/static/style.css?v=20260518e" />
+  <link rel="stylesheet" href="/static/style.css?v=20260518f" />
   <!-- Cropper.js — biblioteca pra ajustar enquadramento da capa antes de gerar planilhas -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script>
@@ -410,6 +410,12 @@
               <button type="button" class="skus-filtro-pill" data-loja="iPaper">iPaper</button>
               <button type="button" class="skus-filtro-pill" data-loja="AllQuadros">AllQuadros</button>
             </div>
+            <select class="skus-sort" id="skus-sort" aria-label="Ordenação">
+              <option value="criado_desc">Mais recentes primeiro</option>
+              <option value="criado_asc">Mais antigos primeiro</option>
+              <option value="sku_asc">SKU (A → Z)</option>
+              <option value="sku_desc">SKU (Z → A)</option>
+            </select>
           </div>
 
           <p class="skus-status" id="skus-status">Carregando…</p>
@@ -465,6 +471,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-  <script src="/static/app.js?v=20260518e"></script>
+  <script src="/static/app.js?v=20260518f"></script>
 </body>
 </html>

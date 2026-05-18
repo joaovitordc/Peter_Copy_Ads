@@ -76,9 +76,10 @@ const skusSection      = $('skus-section');
 const btnFecharSkus    = $('btn-fechar-skus');
 const skusBusca        = $('skus-busca');
 const skusLojasFiltro  = $('skus-lojas-filtro');
+const skusSort         = $('skus-sort');
 const skusTbody        = $('skus-tbody');
 const skusStatus       = $('skus-status');
-const skusState        = { todos: [], filtroLoja: '', filtroBusca: '' };
+const skusState        = { todos: [], filtroLoja: '', filtroBusca: '', sort: 'criado_desc' };
 
 /* ── Init ──────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -819,6 +820,12 @@ function configurarSkusViewer() {
       });
     });
   }
+  if (skusSort) {
+    skusSort.addEventListener('change', () => {
+      skusState.sort = skusSort.value || 'criado_desc';
+      carregarSkus();  // refetch — ordenacao acontece no backend
+    });
+  }
 }
 
 function abrirSkus() {
@@ -850,7 +857,8 @@ async function carregarSkus() {
   skusStatus.classList.remove('error');
   skusTbody.innerHTML = '';
   try {
-    const res  = await fetch('/api/skus');
+    const url = `/api/skus?sort=${encodeURIComponent(skusState.sort || 'criado_desc')}`;
+    const res  = await fetch(url);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Erro ao carregar SKUs');
     skusState.todos = data.skus || [];

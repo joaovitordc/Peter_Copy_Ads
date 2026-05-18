@@ -1122,6 +1122,18 @@ body::before {
   border-color: var(--accent);
   color: var(--accent);
 }
+.skus-sort {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-2);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.3125rem 0.625rem;
+  cursor: pointer;
+  outline: none;
+}
+.skus-sort:focus { border-color: var(--accent); }
 .skus-status {
   font-size: 0.8125rem;
   color: var(--text-2);

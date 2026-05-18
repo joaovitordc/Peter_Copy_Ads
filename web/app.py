@@ -564,12 +564,14 @@ async def recrop(payload: dict):
 
 
 @app.get("/api/skus")
-async def listar_skus(loja: str = "", q: str = ""):
+async def listar_skus(loja: str = "", q: str = "", sort: str = "criado_desc"):
     """Lista todos os SKUs cadastrados no banco (Supabase ou local).
 
     Query params:
       loja — filtra so SKUs cadastrados na loja informada (ex: PPJ).
       q    — busca substring (case-insensitive) em sku_base ou display.
+      sort — ordenacao: criado_desc (default, mais recentes primeiro) |
+             criado_asc | sku_asc | sku_desc.
 
     Retorna {backend, total, skus: [{sku_base, lojas, tipo, display, criado_em}]}
     """
@@ -596,13 +598,22 @@ async def listar_skus(loja: str = "", q: str = ""):
             "criado_em": info_sku.get("criado_em", ""),
         })
 
-    # Ordena por sku_base pra UI estavel
-    resultado.sort(key=lambda r: r["sku_base"].lower())
+    # Ordena conforme sort param. criado_em vem como string ISO "YYYY-MM-DD",
+    # entao sort lexicografico funciona pra datas. Tiebreaker = sku_base.
+    if sort == "criado_asc":
+        resultado.sort(key=lambda r: (r["criado_em"], r["sku_base"].lower()))
+    elif sort == "sku_asc":
+        resultado.sort(key=lambda r: r["sku_base"].lower())
+    elif sort == "sku_desc":
+        resultado.sort(key=lambda r: r["sku_base"].lower(), reverse=True)
+    else:  # criado_desc (default)
+        resultado.sort(key=lambda r: (r["criado_em"], r["sku_base"].lower()), reverse=True)
 
     return {
         "backend": _sku_storage.info(),
         "total":   len(resultado),
         "skus":    resultado,
+        "sort":    sort,
     }
 
 
