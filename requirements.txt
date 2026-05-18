@@ -25,3 +25,7 @@ google-genai>=1.0
 # LLM para traducao de titulos Etsy -> PT (GPT-4o-mini, ~US$0.0001/chamada)
 # Migrado de Gemini Flash em 28/04/2026 por estabilidade superior (sem 503).
 openai
+
+# Crop quadrado (1:1) das 4 imagens do produto antes do upload pro ImgBB —
+# Shopee exige imagens quadradas pro card de listagem (CTR algoritmico).
+Pillow
