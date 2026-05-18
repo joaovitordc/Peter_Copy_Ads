@@ -39,7 +39,7 @@ _SB_KEY = (
     os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     or os.environ.get("SUPABASE_KEY", "")  # fallback caso a env var venha com nome diferente
 )
-_SB_TABLE = "skus_em_uso"
+_SB_TABLE = "peter_skus_em_uso"  # prefixado pra coexistir com tabelas do EllO ERP no mesmo banco
 _HTTP_TIMEOUT = 15
 
 

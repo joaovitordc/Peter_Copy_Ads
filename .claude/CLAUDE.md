@@ -292,16 +292,19 @@ detectar `KIT4`+, cai pra Q1 com warning — operador resolve manualmente.
 `/api/desconto`. Frontend: card secundário em `index.html` + handler em
 `app.js`.
 
-### Banco de SKUs no Supabase (18/05/2026)
+### Banco de SKUs no Supabase compartilhado com EllO ERP (18/05/2026)
 
 **Problema:** `skus_em_uso.json` ficava em `/tmp/` na Vercel (Lambda Hobby tem
 filesystem read-only em `/var/task`). `/tmp` é ephemeral — cold start apaga.
 Resultado: SKUs cadastrados via Vercel evaporavam entre runs → conflito de
 dedup → erro no upload Shopee.
 
-**Solução:** banco PostgreSQL hospedado no Supabase (provisionado via
-Vercel Marketplace, free 500MB DB). Substitui o JSON local sem perder
-funcionalidade.
+**Solução:** banco PostgreSQL **compartilhado com o projeto EllO ERP** do
+operador. Tabelas do Peter levam prefixo `peter_` (ex: `peter_skus_em_uso`)
+pra coexistir limpa com as tabelas do ERP no mesmo schema `public`.
+Caminho pro futuro: quando Peter for integrado ao ERP, ambos consultam o
+mesmo banco — `peter_skus_em_uso` continua sendo a tabela de "nomes
+reservados", complementando as tabelas centrais do ERP (`produtos`, `vendas`).
 
 **Abstração:** `scripts/sku_storage.py` expõe interface única
 (`carregar()`, `salvar()`, `liberar()`, `adicionar()`) e auto-decide o
